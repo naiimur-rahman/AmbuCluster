@@ -40,18 +40,30 @@ const DriverDashboard = ({ ambulance }) => {
     }
   };
 
-  const simulateMovement = () => {
-    // Nudge coordinates for demo
-    const newLat = location.lat + (Math.random() - 0.5) * 0.01;
-    const newLng = location.lng + (Math.random() - 0.5) * 0.01;
-    setLocation({ lat: newLat, lng: newLng });
+  useEffect(() => {
+    let intervalId;
+    if (currentStatus === 'en_route') {
+      // Automatically simulate GPS movement every 3 seconds when en route
+      intervalId = setInterval(() => {
+        setLocation(prev => {
+          const newLat = prev.lat + (Math.random() - 0.5) * 0.005;
+          const newLng = prev.lng + (Math.random() - 0.5) * 0.005;
 
-    socket.emit('update_location', {
-      ambulanceId: ambulance.id,
-      lat: newLat,
-      lng: newLng
-    });
-  };
+          socket.emit('update_location', {
+            ambulanceId: ambulance.id,
+            lat: newLat,
+            lng: newLng
+          });
+
+          return { lat: newLat, lng: newLng };
+        });
+      }, 3000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [currentStatus, ambulance.id]);
 
   return (
     <div className="p-6 max-w-2xl mx-auto mt-10">
@@ -79,20 +91,23 @@ const DriverDashboard = ({ ambulance }) => {
         {/* Content Section */}
         <div className="p-8 space-y-6 bg-gray-50">
 
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex justify-between items-center">
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex justify-between items-center relative overflow-hidden">
+            {currentStatus === 'en_route' && (
+              <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 animate-pulse"></div>
+            )}
             <div>
               <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Live GPS Coordinates</span>
               <span className="font-mono text-gray-700 font-semibold text-lg flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-emerald-500" />
+                <MapPin className={`w-5 h-5 ${currentStatus === 'en_route' ? 'text-emerald-500 animate-bounce' : 'text-gray-400'}`} />
                 {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
               </span>
             </div>
-            <button
-              onClick={simulateMovement}
-              className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all shadow-md active:scale-95"
-            >
-              Simulate Move
-            </button>
+            {currentStatus === 'en_route' && (
+              <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
+                Transmitting GPS...
+              </div>
+            )}
           </div>
 
           {activeRequest ? (
