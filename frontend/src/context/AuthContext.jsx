@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/login', { email, password });
+      const res = await axios.post('/api/login', { email, password });
       setUserState(res.data);
       localStorage.setItem('ambucluster_session', JSON.stringify(res.data));
       return { success: true };

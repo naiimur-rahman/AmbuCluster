@@ -3,7 +3,7 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import { ShieldAlert, Activity, User, Phone, MapPin, Clock } from 'lucide-react';
 
-const socket = io('http://localhost:5000');
+const socket = io();
 
 const HospitalDashboard = ({ hospital }) => {
   const [requests, setRequests] = useState([]);
@@ -27,7 +27,7 @@ const HospitalDashboard = ({ hospital }) => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/requests/hospital/${hospital.hospital_id}`);
+      const res = await axios.get(`/api/requests/hospital/${hospital.hospital_id}`);
       setRequests(res.data);
     } catch (err) {
       console.error(err);
