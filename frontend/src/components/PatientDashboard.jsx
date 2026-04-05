@@ -30,7 +30,7 @@ const ambulanceIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const socket = io('http://localhost:5000');
+const socket = io();
 
 const PatientDashboard = ({ user, profile }) => {
   const [hospitals, setHospitals] = useState([]);
@@ -40,8 +40,8 @@ const PatientDashboard = ({ user, profile }) => {
   const [location, setLocation] = useState({ lat: 23.8103, lng: 90.4125 });
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/hospitals').then(res => setHospitals(res.data));
-    axios.get('http://localhost:5000/api/ambulances').then(res => setAmbulances(res.data));
+    axios.get('/api/hospitals').then(res => setHospitals(res.data));
+    axios.get('/api/ambulances').then(res => setAmbulances(res.data));
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -68,7 +68,7 @@ const PatientDashboard = ({ user, profile }) => {
 
   const requestAmbulance = async (type) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/request-ambulance', {
+      const res = await axios.post('/api/request-ambulance', {
         patientId: user.user_id,
         type: type,
         lat: location.lat,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Navigation, MapPin, CheckCircle, Activity, User } from 'lucide-react';
 
-const socket = io('http://localhost:5000');
+const socket = io();
 
 const DriverDashboard = ({ ambulance }) => {
   const [currentStatus, setCurrentStatus] = useState(ambulance.status);
