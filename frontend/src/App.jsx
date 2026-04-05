@@ -3,6 +3,7 @@ import Login from './components/Login';
 import PatientDashboard from './components/PatientDashboard';
 import HospitalDashboard from './components/HospitalDashboard';
 import DriverDashboard from './components/DriverDashboard';
+import SysAdminDashboard from './components/SysAdminDashboard';
 import { LogOut, Activity } from 'lucide-react';
 
 function App() {
@@ -24,6 +25,8 @@ function App() {
         return <HospitalDashboard hospital={userState.hospital} />;
       case 'driver':
         return <DriverDashboard ambulance={userState.ambulance} />;
+      case 'sysadmin':
+        return <SysAdminDashboard />;
       default:
         return <div>Unknown Role</div>;
     }

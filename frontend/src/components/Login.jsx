@@ -98,8 +98,8 @@ const Login = ({ onLogin }) => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            <div className="flex gap-2">
-              {['all', 'patient', 'hospital', 'driver'].map(role => (
+            <div className="flex gap-2 flex-wrap">
+              {['all', 'patient', 'hospital', 'driver', 'sysadmin'].map(role => (
                 <button
                   key={role}
                   onClick={() => setSelectedRole(role)}

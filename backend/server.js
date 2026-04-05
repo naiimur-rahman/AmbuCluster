@@ -24,21 +24,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-// Calculate distance between two coordinates using Haversine formula
-function getDistanceInKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius of the earth in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2)
-    ;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const d = R * c; // Distance in km
-  return d;
-}
-
 // --- API Endpoints ---
 
 // Get all users
@@ -115,54 +100,79 @@ app.get('/api/requests/hospital/:hospitalId', async (req, res) => {
   }
 });
 
-// Request Ambulance (Auto Assign)
+// Advanced Admin Analytics Endpoint
+app.get('/api/analytics', async (req, res) => {
+  try {
+    const hospitalStats = await pool.query('SELECT * FROM hospital_analytics ORDER BY demand_rank ASC');
+    const auditLogs = await pool.query('SELECT * FROM emergency_audit_log ORDER BY changed_at DESC LIMIT 50');
+    const systemOverview = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM ambulances) as total_ambulances,
+        (SELECT COUNT(*) FROM ambulances WHERE status = 'available') as available_ambulances,
+        (SELECT COUNT(*) FROM emergency_requests) as total_requests,
+        (SELECT COUNT(*) FROM emergency_requests WHERE is_sos = TRUE) as sos_requests
+    `);
+
+    res.json({
+      hospitals: hospitalStats.rows,
+      audits: auditLogs.rows,
+      overview: systemOverview.rows[0]
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Request Ambulance (Auto Assign using Advanced CTE & Native DB Function)
 app.post('/api/request-ambulance', async (req, res) => {
   const { patientId, isSos, lat, lng } = req.body;
   try {
-    const ambulancesQuery = await pool.query("SELECT * FROM ambulances WHERE status = 'available'");
-    const availableAmbulances = ambulancesQuery.rows;
+    // Single complex query using CTEs to find nearest ambulance and nearest hospital simultaneously using the DB
+    const assignmentQuery = await pool.query(`
+      WITH nearest_amb AS (
+          SELECT id, calculate_distance($1, $2, location_lat, location_lng) as distance
+          FROM ambulances
+          WHERE status = 'available'
+          ORDER BY distance ASC
+          LIMIT 1
+      ),
+      nearest_hosp AS (
+          SELECT id, calculate_distance($1, $2, location_lat, location_lng) as distance
+          FROM hospitals
+          WHERE available_beds > 0
+          ORDER BY distance ASC
+          LIMIT 1
+      )
+      SELECT
+          (SELECT id FROM nearest_amb) as ambulance_id,
+          (SELECT id FROM nearest_hosp) as hospital_id
+    `, [lat, lng]);
 
-    if (availableAmbulances.length === 0) {
-      return res.status(400).json({ error: 'No ambulances currently available' });
+    const assignment = assignmentQuery.rows[0];
+
+    if (!assignment.ambulance_id) {
+      return res.status(400).json({ error: 'No ambulances currently available in the system' });
     }
 
-    let nearestAmbulance = null;
-    let minDistance = Infinity;
+    if (!assignment.hospital_id) {
+      return res.status(400).json({ error: 'No hospitals with available beds found' });
+    }
 
-    availableAmbulances.forEach(amb => {
-      const dist = getDistanceInKm(lat, lng, amb.location_lat, amb.location_lng);
-      if (dist < minDistance) {
-        minDistance = dist;
-        nearestAmbulance = amb;
-      }
-    });
-
-    const hospitalsQuery = await pool.query("SELECT * FROM hospitals");
-    const hospitals = hospitalsQuery.rows;
-
-    let nearestHospital = null;
-    minDistance = Infinity;
-
-    hospitals.forEach(hosp => {
-      const dist = getDistanceInKm(lat, lng, hosp.location_lat, hosp.location_lng);
-      if (dist < minDistance) {
-        minDistance = dist;
-        nearestHospital = hosp;
-      }
-    });
-
+    // Insert the request
     const insertResult = await pool.query(`
       INSERT INTO emergency_requests (patient_id, ambulance_id, hospital_id, status, is_sos, pickup_lat, pickup_lng)
       VALUES ($1, $2, $3, 'assigned', $4, $5, $6)
       RETURNING *
-    `, [patientId, nearestAmbulance.id, nearestHospital.id, isSos, lat, lng]);
+    `, [patientId, assignment.ambulance_id, assignment.hospital_id, isSos, lat, lng]);
 
     const newRequest = insertResult.rows[0];
 
-    await pool.query("UPDATE ambulances SET status = 'en_route' WHERE id = $1", [nearestAmbulance.id]);
+    // Update ambulance status
+    await pool.query("UPDATE ambulances SET status = 'en_route' WHERE id = $1", [assignment.ambulance_id]);
 
+    // Emit socket events
     io.emit('new_request', newRequest);
-    io.emit('ambulance_assigned', { ambulanceId: nearestAmbulance.id, requestId: newRequest.id });
+    io.emit('ambulance_assigned', { ambulanceId: assignment.ambulance_id, requestId: newRequest.id });
 
     res.json(newRequest);
   } catch (err) {
