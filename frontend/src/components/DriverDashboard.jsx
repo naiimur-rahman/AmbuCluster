@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { Navigation, MapPin, CheckCircle, Activity, User } from 'lucide-react';
 
 const socket = io('http://localhost:5000');
 
@@ -13,7 +14,7 @@ const DriverDashboard = ({ ambulance }) => {
       if (data.ambulanceId === ambulance.id) {
         setCurrentStatus('en_route');
         setActiveRequest(data.requestId);
-        alert('EMERGENCY DISPATCH RECEIVED!');
+        alert('🚨 EMERGENCY DISPATCH RECEIVED! 🚨');
       }
     });
 
@@ -40,6 +41,7 @@ const DriverDashboard = ({ ambulance }) => {
   };
 
   const simulateMovement = () => {
+    // Nudge coordinates for demo
     const newLat = location.lat + (Math.random() - 0.5) * 0.01;
     const newLng = location.lng + (Math.random() - 0.5) * 0.01;
     setLocation({ lat: newLat, lng: newLng });
@@ -52,43 +54,78 @@ const DriverDashboard = ({ ambulance }) => {
   };
 
   return (
-    <div className="p-6 max-w-lg mx-auto mt-10 bg-white rounded-xl shadow-lg border border-gray-200">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Ambulance {ambulance.vehicle_number}</h1>
-        <p className={`mt-2 inline-block px-4 py-1 rounded-full text-sm font-bold uppercase tracking-widest text-white ${currentStatus === 'available' ? 'bg-green-500' : 'bg-red-500'}`}>
-          {currentStatus.replace('_', ' ')}
-        </p>
-      </div>
+    <div className="p-6 max-w-2xl mx-auto mt-10">
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
 
-      <div className="space-y-4">
-        <button
-          onClick={simulateMovement}
-          className="w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg transition"
-        >
-          Simulate Movement (Update GPS)
-        </button>
+        {/* Header Section */}
+        <div className={`p-8 text-center text-white relative transition-colors duration-500
+          ${currentStatus === 'available' ? 'bg-gradient-to-br from-emerald-600 to-teal-700' :
+            currentStatus === 'en_route' ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-rose-600 to-red-700'}`}>
+          <div className="absolute top-0 right-0 p-4 opacity-20"><Activity className="w-32 h-32" /></div>
 
-        {activeRequest && (
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4 space-y-3">
-            <h3 className="font-bold text-blue-800 mb-2">Active Dispatch</h3>
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 shadow-inner">
+               <Navigation className={`w-10 h-10 ${currentStatus === 'en_route' ? 'animate-bounce' : ''}`} />
+            </div>
+            <h1 className="text-3xl font-extrabold mb-1">{ambulance.vehicle_number}</h1>
+            <p className="text-white/80 font-medium mb-4 tracking-wide">{ambulance.type}</p>
+
+            <div className="inline-block px-6 py-2 rounded-full text-sm font-extrabold uppercase tracking-widest bg-white/20 backdrop-blur-md shadow-lg border border-white/30">
+              STATUS: {currentStatus.replace('_', ' ')}
+            </div>
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="p-8 space-y-6 bg-gray-50">
+
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex justify-between items-center">
+            <div>
+              <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Live GPS Coordinates</span>
+              <span className="font-mono text-gray-700 font-semibold text-lg flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-emerald-500" />
+                {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+              </span>
+            </div>
             <button
-              onClick={() => updateStatus('en_route_hospital')}
-              className="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition"
+              onClick={simulateMovement}
+              className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all shadow-md active:scale-95"
             >
-              Patient Picked Up (En Route Hospital)
-            </button>
-            <button
-              onClick={() => updateStatus('completed')}
-              className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
-            >
-              Arrived at Hospital (Complete)
+              Simulate Move
             </button>
           </div>
-        )}
-      </div>
 
-      <div className="mt-6 text-sm text-gray-500 text-center font-mono">
-        Current GPS: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+          {activeRequest ? (
+            <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-2 h-full bg-amber-500"></div>
+              <h3 className="font-extrabold text-amber-900 mb-4 text-xl flex items-center gap-2">
+                <Activity className="w-6 h-6" /> Active Dispatch
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => updateStatus('en_route_hospital')}
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  <User className="w-5 h-5" />
+                  Patient Picked Up
+                </button>
+                <button
+                  onClick={() => updateStatus('completed')}
+                  className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  Arrived at Hospital
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center p-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl">
+              <p className="font-semibold text-lg">No active dispatch.</p>
+              <p className="text-sm">Standing by for emergencies...</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
