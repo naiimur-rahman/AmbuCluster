@@ -1,56 +1,52 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
+import DashboardLayout from './layouts/DashboardLayout';
+
 import PatientDashboard from './components/PatientDashboard';
 import HospitalDashboard from './components/HospitalDashboard';
 import DriverDashboard from './components/DriverDashboard';
-import { LogOut } from 'lucide-react';
+import SysAdminDashboard from './components/SysAdminDashboard';
+
+// A wrapper to render the correct dashboard based on role
+const RoleBasedDashboard = () => {
+  const { userState } = useAuth();
+
+  if (!userState) return <Navigate to="/login" />;
+
+  switch (userState.user.role) {
+    case 'patient':
+      return <PatientDashboard user={userState.user} profile={userState.profile} />;
+    case 'hospital':
+      return <HospitalDashboard hospital={userState.hospital} />;
+    case 'driver':
+      return <DriverDashboard ambulance={userState.ambulance} />;
+    case 'sysadmin':
+      return <SysAdminDashboard />;
+    default:
+      return <div className="p-8 text-center text-red-500">Error: Unknown User Role</div>;
+  }
+};
 
 function App() {
-  const [userState, setUserState] = useState(null);
-
-  const handleLogout = () => {
-    setUserState(null);
-  };
-
-  if (!userState) {
-    return <Login onLogin={setUserState} />;
-  }
-
-  const renderDashboard = () => {
-    switch (userState.user.role) {
-      case 'patient':
-        return <PatientDashboard user={userState.user} profile={userState.profile} />;
-      case 'hospital':
-        return <HospitalDashboard hospital={userState.hospital} />;
-      case 'driver':
-        return <DriverDashboard ambulance={userState.ambulance} />;
-      default:
-        return <div>Unknown Role</div>;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
-        <div className="font-bold text-xl text-blue-600 flex items-center gap-2">
-          <span>🚑</span> AMS Demo
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600 text-sm font-medium">Logged in as {userState.user.name} ({userState.user.role})</span>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800 transition"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
-        </div>
-      </nav>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
 
-      <main className="py-6">
-        {renderDashboard()}
-      </main>
-    </div>
+          {/* Protected Routes */}
+          <Route path="/" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<RoleBasedDashboard />} />
+          </Route>
+
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
