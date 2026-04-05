@@ -12,7 +12,7 @@ const HospitalDashboard = ({ hospital }) => {
     fetchRequests();
 
     socket.on('new_request', (req) => {
-      if (req.hospital_id === hospital.id) fetchRequests();
+      if (req.destination_hospital_id === hospital.hospital_id) fetchRequests();
     });
 
     socket.on('request_status_updated', () => {
@@ -23,11 +23,11 @@ const HospitalDashboard = ({ hospital }) => {
       socket.off('new_request');
       socket.off('request_status_updated');
     };
-  }, []);
+  }, [hospital.hospital_id]);
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/requests/hospital/${hospital.id}`);
+      const res = await axios.get(`http://localhost:5000/api/requests/hospital/${hospital.hospital_id}`);
       setRequests(res.data);
     } catch (err) {
       console.error(err);
@@ -50,15 +50,13 @@ const HospitalDashboard = ({ hospital }) => {
 
           <div className="flex gap-4">
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700 p-4 rounded-xl text-center min-w-[120px]">
-              <div className="text-3xl font-bold text-emerald-400">{hospital.available_beds}</div>
-              <div className="text-xs text-slate-400 uppercase font-semibold mt-1">Available Beds</div>
+              <div className="text-3xl font-bold text-emerald-400">{hospital.available_general_beds}</div>
+              <div className="text-xs text-slate-400 uppercase font-semibold mt-1">Gen. Beds</div>
             </div>
-            {hospital.icu_beds > 0 && (
-              <div className="bg-rose-900/30 backdrop-blur border border-rose-800/50 p-4 rounded-xl text-center min-w-[120px]">
-                <div className="text-3xl font-bold text-rose-400">{hospital.icu_beds}</div>
-                <div className="text-xs text-rose-300 uppercase font-semibold mt-1">ICU Beds</div>
-              </div>
-            )}
+            <div className="bg-rose-900/30 backdrop-blur border border-rose-800/50 p-4 rounded-xl text-center min-w-[120px]">
+              <div className="text-3xl font-bold text-rose-400">{hospital.available_icu_beds}</div>
+              <div className="text-xs text-rose-300 uppercase font-semibold mt-1">ICU Beds</div>
+            </div>
           </div>
         </div>
       </div>
@@ -80,15 +78,15 @@ const HospitalDashboard = ({ hospital }) => {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {requests.map(req => (
-              <div key={req.id} className={`relative bg-white rounded-2xl shadow-sm border-2 overflow-hidden transition-all hover:shadow-md
-                ${req.is_sos ? 'border-rose-500' : 'border-emerald-500'}`}>
+              <div key={req.trip_id} className={`relative bg-white rounded-2xl shadow-sm border-2 overflow-hidden transition-all hover:shadow-md
+                border-emerald-500`}>
 
                 {/* Status bar */}
                 <div className={`px-5 py-3 flex justify-between items-center text-white
-                  ${req.is_sos ? 'bg-gradient-to-r from-rose-600 to-rose-500' : 'bg-gradient-to-r from-emerald-600 to-teal-500'}`}>
+                  bg-gradient-to-r from-emerald-600 to-teal-500`}>
                   <div className="flex items-center gap-2 font-bold tracking-wide">
-                    {req.is_sos ? <ShieldAlert className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
-                    {req.is_sos ? 'SOS PRIORITY' : 'STANDARD DISPATCH'}
+                    <Activity className="w-5 h-5" />
+                    STANDARD DISPATCH
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-sm shadow-inner`}>
                     {req.status.replace('_', ' ')}
@@ -113,31 +111,13 @@ const HospitalDashboard = ({ hospital }) => {
                     )}
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl border border-gray-100 p-5 space-y-4">
-                     <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Medical Profile</h4>
-                     <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                      <div>
-                        <p className="text-gray-500 font-medium mb-1">Allergies</p>
-                        <p className="font-semibold text-gray-900 bg-white p-2 rounded border border-gray-100">{req.allergies || 'None recorded'}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 font-medium mb-1">Chronic Diseases</p>
-                        <p className="font-semibold text-gray-900 bg-white p-2 rounded border border-gray-100">{req.chronic_diseases || 'None recorded'}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-gray-500 font-medium mb-1">Past Surgeries</p>
-                        <p className="font-semibold text-gray-900 bg-white p-2 rounded border border-gray-100">{req.past_surgeries || 'None recorded'}</p>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-gray-600 bg-gray-50 px-4 py-2 rounded-lg font-medium text-sm">
                       <Phone className="w-4 h-4 text-emerald-600" />
-                      Emergency: {req.emergency_contact || 'N/A'}
+                      Emergency: N/A
                     </div>
                     <div className="text-xs font-semibold text-gray-400">
-                      Ambulance ID: #{req.ambulance_id}
+                      Ambulance ID: {req.ambulance_id ? req.ambulance_id.split('-')[0] : 'Pending'}
                     </div>
                   </div>
                 </div>

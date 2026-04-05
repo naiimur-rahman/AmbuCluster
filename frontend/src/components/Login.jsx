@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('password123'); // Default for demo
+  const [password, setPassword] = useState('1234'); // Default for demo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -18,18 +18,7 @@ const Login = () => {
     setError('');
 
     try {
-      // For the demo, we look up the user by email to get their ID,
-      // then use the existing login endpoint.
-      const usersRes = await axios.get('http://localhost:5000/api/users');
-      const targetUser = usersRes.data.find(u => u.email === email);
-
-      if (!targetUser) {
-        setError('Invalid credentials. Please use a demo account.');
-        setLoading(false);
-        return;
-      }
-
-      const result = await login(targetUser.id);
+      const result = await login(email, password);
       if (result.success) {
         navigate('/dashboard');
       } else {
@@ -46,6 +35,7 @@ const Login = () => {
     if (role === 'hospital') setEmail('admin0@hospital.bd');
     if (role === 'driver') setEmail('driver1@ambulance.bd');
     if (role === 'patient') setEmail('patient@ambucluster.com');
+    setPassword('1234');
   };
 
   return (

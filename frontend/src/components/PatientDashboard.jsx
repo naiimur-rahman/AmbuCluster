@@ -51,11 +51,11 @@ const PatientDashboard = ({ user, profile }) => {
     }
 
     socket.on('location_updated', (data) => {
-      setAmbulances(prev => prev.map(a => a.id === data.ambulanceId ? { ...a, location_lat: data.lat, location_lng: data.lng } : a));
+      setAmbulances(prev => prev.map(a => a.ambulance_id === data.ambulanceId ? { ...a, current_lat: data.lat, current_lng: data.lng } : a));
     });
 
     socket.on('request_status_updated', (data) => {
-      if (requestStatus && data.requestId === requestStatus.id) {
+      if (requestStatus && data.tripId === requestStatus.trip_id) {
          setRequestStatus(prev => ({...prev, status: data.status}));
       }
     });
@@ -66,16 +66,16 @@ const PatientDashboard = ({ user, profile }) => {
     };
   }, [requestStatus]);
 
-  const requestAmbulance = async (isSos) => {
+  const requestAmbulance = async (type) => {
     try {
       const res = await axios.post('http://localhost:5000/api/request-ambulance', {
-        patientId: user.id,
-        isSos: isSos,
+        patientId: user.user_id,
+        type: type,
         lat: location.lat,
         lng: location.lng
       });
       setRequestStatus(res.data);
-      alert(`Ambulance requested successfully! Assigned Ambulance ID: ${res.data.ambulance_id}`);
+      alert(`Ambulance requested successfully! Assigned Ambulance ID: ${res.data.ambulance_id.split('-')[0]}`);
     } catch (err) {
       alert(err.response?.data?.error || 'Error requesting ambulance');
     }
@@ -124,32 +124,40 @@ const PatientDashboard = ({ user, profile }) => {
                 <div className="space-y-2 bg-white p-3 rounded-lg text-sm font-medium text-gray-700 border border-emerald-100">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Ambulance ID:</span>
-                    <span className="text-gray-900">#{requestStatus.ambulance_id}</span>
+                    <span className="text-gray-900">{requestStatus.ambulance_id ? requestStatus.ambulance_id.split('-')[0] : 'Pending'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Target Hospital:</span>
-                    <span className="text-gray-900">#{requestStatus.hospital_id}</span>
+                    <span className="text-gray-900">{requestStatus.destination_hospital_id ? requestStatus.destination_hospital_id.split('-')[0] : 'Pending'}</span>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="space-y-4 relative z-10">
                 <button
-                  onClick={() => requestAmbulance(false)}
+                  onClick={() => requestAmbulance('Basic')}
                   className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 >
                   <MapPin className="w-5 h-5" />
-                  Standard Dispatch
+                  Basic Ambulance
+                </button>
+
+                <button
+                  onClick={() => requestAmbulance('ICU')}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <Activity className="w-5 h-5" />
+                  ICU Ambulance
                 </button>
 
                 <div className="relative">
                   <div className="absolute inset-0 bg-red-500 blur opacity-20 rounded-xl animate-pulse"></div>
                   <button
-                    onClick={() => requestAmbulance(true)}
+                    onClick={() => requestAmbulance('Freezing')}
                     className="relative w-full py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                   >
                     <ShieldAlert className="w-6 h-6" />
-                    SOS EMERGENCY
+                    Freezing Ambulance
                   </button>
                 </div>
               </div>
@@ -202,22 +210,21 @@ const PatientDashboard = ({ user, profile }) => {
             </Marker>
 
             {hospitals.map(h => (
-              <Marker key={h.id} position={[h.location_lat, h.location_lng]} icon={hospitalIcon}>
+              <Marker key={h.hospital_id} position={[h.latitude, h.longitude]} icon={hospitalIcon}>
                 <Popup>
                   <div className="font-bold text-base">{h.name}</div>
-                  <div className="text-xs text-gray-500 mb-1">{h.type} Hospital</div>
-                  <div className="text-sm">Beds: <strong>{h.available_beds}</strong> / {h.total_beds}</div>
-                  {h.icu_beds > 0 && <div className="text-sm text-red-600 font-semibold">ICU: {h.icu_beds}</div>}
+                  <div className="text-sm">Gen Beds: <strong>{h.available_general_beds}</strong></div>
+                  <div className="text-sm text-red-600 font-semibold">ICU Beds: {h.available_icu_beds}</div>
                 </Popup>
               </Marker>
             ))}
 
             {ambulances.map(a => (
-              <Marker key={a.id} position={[a.location_lat, a.location_lng]} icon={ambulanceIcon}>
+              <Marker key={a.ambulance_id} position={[a.current_lat, a.current_lng]} icon={ambulanceIcon}>
                 <Popup>
                   <div className="font-bold">{a.vehicle_number}</div>
                   <div className="text-xs text-gray-600 mb-1">{a.type}</div>
-                  <div className={`text-xs font-bold uppercase ${a.status === 'available' ? 'text-green-600' : 'text-amber-600'}`}>
+                  <div className={`text-xs font-bold uppercase ${a.status === 'Available' ? 'text-green-600' : 'text-amber-600'}`}>
                     {a.status}
                   </div>
                 </Popup>
