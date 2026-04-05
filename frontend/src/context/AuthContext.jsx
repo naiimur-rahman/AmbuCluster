@@ -18,11 +18,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (userId) => {
+  const login = async (email, password) => {
     try {
-      // In a real app, this would take email/password.
-      // For this lab demo, we pass the selected ID, but through a standard form interface.
-      const res = await axios.post('http://localhost:5000/api/login', { userId });
+      const res = await axios.post('http://localhost:5000/api/login', { email, password });
       setUserState(res.data);
       localStorage.setItem('ambucluster_session', JSON.stringify(res.data));
       return { success: true };

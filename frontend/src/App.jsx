@@ -16,12 +16,16 @@ const RoleBasedDashboard = () => {
   if (!userState) return <Navigate to="/login" />;
 
   switch (userState.user.role) {
+    case 'Patient':
     case 'patient':
       return <PatientDashboard user={userState.user} profile={userState.profile} />;
+    case 'Hospital':
     case 'hospital':
       return <HospitalDashboard hospital={userState.hospital} />;
+    case 'Driver':
     case 'driver':
       return <DriverDashboard ambulance={userState.ambulance} />;
+    case 'Admin':
     case 'sysadmin':
       return <SysAdminDashboard />;
     default:

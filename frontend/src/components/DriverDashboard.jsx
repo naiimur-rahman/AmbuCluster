@@ -6,14 +6,14 @@ const socket = io('http://localhost:5000');
 
 const DriverDashboard = ({ ambulance }) => {
   const [currentStatus, setCurrentStatus] = useState(ambulance.status);
-  const [activeRequest, setActiveRequest] = useState(null);
-  const [location, setLocation] = useState({ lat: parseFloat(ambulance.location_lat), lng: parseFloat(ambulance.location_lng) });
+  const [activeTrip, setActiveTrip] = useState(null);
+  const [location, setLocation] = useState({ lat: parseFloat(ambulance.current_lat), lng: parseFloat(ambulance.current_lng) });
 
   useEffect(() => {
     socket.on('ambulance_assigned', (data) => {
-      if (data.ambulanceId === ambulance.id) {
-        setCurrentStatus('en_route');
-        setActiveRequest(data.requestId);
+      if (data.ambulanceId === ambulance.ambulance_id) {
+        setCurrentStatus('Accepted');
+        setActiveTrip(data.tripId);
         alert('🚨 EMERGENCY DISPATCH RECEIVED! 🚨');
       }
     });
@@ -21,20 +21,20 @@ const DriverDashboard = ({ ambulance }) => {
     return () => {
       socket.off('ambulance_assigned');
     };
-  }, []);
+  }, [ambulance.ambulance_id]);
 
   const updateStatus = (newStatus) => {
-    if (!activeRequest && newStatus !== 'available') return;
+    if (!activeTrip && newStatus !== 'Available') return;
 
     socket.emit('update_request_status', {
-      requestId: activeRequest,
+      tripId: activeTrip,
       status: newStatus,
-      ambulanceId: ambulance.id
+      ambulanceId: ambulance.ambulance_id
     });
 
-    if (newStatus === 'completed' || newStatus === 'cancelled') {
-      setCurrentStatus('available');
-      setActiveRequest(null);
+    if (newStatus === 'Completed' || newStatus === 'Cancelled') {
+      setCurrentStatus('Available');
+      setActiveTrip(null);
     } else {
       setCurrentStatus(newStatus);
     }
@@ -42,7 +42,7 @@ const DriverDashboard = ({ ambulance }) => {
 
   useEffect(() => {
     let intervalId;
-    if (currentStatus === 'en_route') {
+    if (currentStatus === 'Accepted' || currentStatus === 'En_Route') {
       // Automatically simulate GPS movement every 3 seconds when en route
       intervalId = setInterval(() => {
         setLocation(prev => {
@@ -50,7 +50,7 @@ const DriverDashboard = ({ ambulance }) => {
           const newLng = prev.lng + (Math.random() - 0.5) * 0.005;
 
           socket.emit('update_location', {
-            ambulanceId: ambulance.id,
+            ambulanceId: ambulance.ambulance_id,
             lat: newLat,
             lng: newLng
           });
@@ -63,7 +63,7 @@ const DriverDashboard = ({ ambulance }) => {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [currentStatus, ambulance.id]);
+  }, [currentStatus, ambulance.ambulance_id]);
 
   return (
     <div className="p-6 max-w-2xl mx-auto mt-10">
@@ -71,13 +71,13 @@ const DriverDashboard = ({ ambulance }) => {
 
         {/* Header Section */}
         <div className={`p-8 text-center text-white relative transition-colors duration-500
-          ${currentStatus === 'available' ? 'bg-gradient-to-br from-emerald-600 to-teal-700' :
-            currentStatus === 'en_route' ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-rose-600 to-red-700'}`}>
+          ${currentStatus === 'Available' ? 'bg-gradient-to-br from-emerald-600 to-teal-700' :
+            (currentStatus === 'Accepted' || currentStatus === 'En_Route') ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-rose-600 to-red-700'}`}>
           <div className="absolute top-0 right-0 p-4 opacity-20"><Activity className="w-32 h-32" /></div>
 
           <div className="relative z-10 flex flex-col items-center">
             <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 shadow-inner">
-               <Navigation className={`w-10 h-10 ${currentStatus === 'en_route' ? 'animate-bounce' : ''}`} />
+               <Navigation className={`w-10 h-10 ${(currentStatus === 'Accepted' || currentStatus === 'En_Route') ? 'animate-bounce' : ''}`} />
             </div>
             <h1 className="text-3xl font-extrabold mb-1">{ambulance.vehicle_number}</h1>
             <p className="text-white/80 font-medium mb-4 tracking-wide">{ambulance.type}</p>
@@ -92,17 +92,17 @@ const DriverDashboard = ({ ambulance }) => {
         <div className="p-8 space-y-6 bg-gray-50">
 
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex justify-between items-center relative overflow-hidden">
-            {currentStatus === 'en_route' && (
+            {(currentStatus === 'Accepted' || currentStatus === 'En_Route') && (
               <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 animate-pulse"></div>
             )}
             <div>
               <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Live GPS Coordinates</span>
               <span className="font-mono text-gray-700 font-semibold text-lg flex items-center gap-2">
-                <MapPin className={`w-5 h-5 ${currentStatus === 'en_route' ? 'text-emerald-500 animate-bounce' : 'text-gray-400'}`} />
+                <MapPin className={`w-5 h-5 ${(currentStatus === 'Accepted' || currentStatus === 'En_Route') ? 'text-emerald-500 animate-bounce' : 'text-gray-400'}`} />
                 {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
               </span>
             </div>
-            {currentStatus === 'en_route' && (
+            {(currentStatus === 'Accepted' || currentStatus === 'En_Route') && (
               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
                 Transmitting GPS...
@@ -110,7 +110,7 @@ const DriverDashboard = ({ ambulance }) => {
             )}
           </div>
 
-          {activeRequest ? (
+          {activeTrip ? (
             <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-2 h-full bg-amber-500"></div>
               <h3 className="font-extrabold text-amber-900 mb-4 text-xl flex items-center gap-2">
@@ -119,14 +119,14 @@ const DriverDashboard = ({ ambulance }) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
-                  onClick={() => updateStatus('en_route_hospital')}
+                  onClick={() => updateStatus('En_Route')}
                   className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                 >
                   <User className="w-5 h-5" />
                   Patient Picked Up
                 </button>
                 <button
-                  onClick={() => updateStatus('completed')}
+                  onClick={() => updateStatus('Completed')}
                   className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                 >
                   <CheckCircle className="w-5 h-5" />
