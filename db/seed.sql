@@ -1,0 +1,178 @@
+-- ====================================================================================
+-- ADVANCED HEALTHCARE & LOGISTICS DATABASE: REALISTIC TEST DATA (DHAKA, BANGLADESH)
+-- ====================================================================================
+
+-- ------------------------------------------------------------------------------------
+-- PHASE 1: MASTER DATA
+-- ------------------------------------------------------------------------------------
+
+-- 1. HOSPITAL TABLE (5 Prominent Dhaka Hospitals)
+INSERT INTO hospital (hospital_id, hospital_name, contact_number, latitude, longitude, total_er_beds, available_er_beds) VALUES
+('00000000-0000-0000-0000-000000000001', 'United Hospital', '+88029852466', 23.804928, 90.415618, 40, 12),
+('00000000-0000-0000-0000-000000000002', 'Square Hospitals', '+88028144400', 23.753046, 90.381615, 60, 5),
+('00000000-0000-0000-0000-000000000003', 'Evercare Hospital Dhaka', '+88028431661', 23.810332, 90.431236, 50, 18),
+('00000000-0000-0000-0000-000000000004', 'Dhaka Medical College Hospital', '+880255165088', 23.726053, 90.397636, 120, 50),
+('00000000-0000-0000-0000-000000000005', 'Kurmitola General Hospital', '+880255062201', 23.818961, 90.403061, 80, 22);
+
+-- 2. PATIENT TABLE (15 Realistic Profiles)
+INSERT INTO patient (patient_id, full_name, phone_number, date_of_birth, blood_group, emergency_contact, clinical_notes) VALUES
+('10000000-0000-0000-0000-000000000001', 'Naimur Rahman', '+8801994749847', '2000-05-14', 'O+', '+8801711223344', '{"allergies": ["Penicillin"], "chronic_conditions": []}'),
+('10000000-0000-0000-0000-000000000002', 'Tanisha', '+8801711223344', '2002-08-22', 'B+', '+8801994749847', '{"allergies": [], "chronic_conditions": ["Asthma"]}'),
+('10000000-0000-0000-0000-000000000003', 'Rafiqul Islam', '+8801819283746', '1965-11-02', 'AB+', '+8801819283700', '{"allergies": ["Peanuts"], "chronic_conditions": ["Hypertension", "Type 2 Diabetes"]}'),
+('10000000-0000-0000-0000-000000000004', 'Nusrat Jahan', '+8801552345678', '1995-03-15', 'A+', '+8801552345600', '{"allergies": [], "chronic_conditions": []}'),
+('10000000-0000-0000-0000-000000000005', 'Tahir', '+8801311445566', '2005-01-10', 'O-', '+8801311445500', '{"allergies": ["Dust"], "chronic_conditions": []}'),
+('10000000-0000-0000-0000-000000000006', 'Kamal Hossain', '+8801922334455', '1958-12-30', 'B-', '+8801922334400', '{"allergies": [], "chronic_conditions": ["Coronary Artery Disease"]}'),
+('10000000-0000-0000-0000-000000000007', 'Salma Begum', '+8801733445566', '1972-07-18', 'O+', '+8801733445500', '{"allergies": ["Sulfa Drugs"], "chronic_conditions": ["Arthritis"]}'),
+('10000000-0000-0000-0000-000000000008', 'Tariq Anam', '+8801844556677', '1988-09-05', 'A-', '+8801844556600', '{"allergies": [], "chronic_conditions": []}'),
+('10000000-0000-0000-0000-000000000009', 'Farhana Akter', '+8801555667788', '1992-04-25', 'AB-', '+8801555667700', '{"allergies": ["Latex"], "chronic_conditions": ["Migraines"]}'),
+('10000000-0000-0000-0000-000000000010', 'Mehedi Hasan', '+8801366778899', '2001-10-12', 'B+', '+8801366778800', '{"allergies": [], "chronic_conditions": []}'),
+('10000000-0000-0000-0000-000000000011', 'Sumaiya Binte', '+8801977889900', '1985-02-28', 'O+', '+8801977889911', '{"allergies": ["Seafood"], "chronic_conditions": ["Hypothyroidism"]}'),
+('10000000-0000-0000-0000-000000000012', 'Arifur Rahman', '+8801788990011', '1979-06-14', 'A+', '+8801788990022', '{"allergies": [], "chronic_conditions": ["High Cholesterol"]}'),
+('10000000-0000-0000-0000-000000000013', 'Sadia Islam', '+8801899001122', '1998-11-09', 'O-', '+8801899001133', '{"allergies": ["Pollen"], "chronic_conditions": []}'),
+('10000000-0000-0000-0000-000000000014', 'Mahmudul Hasan', '+8801511223344', '1960-08-01', 'B-', '+8801511223355', '{"allergies": [], "chronic_conditions": ["Glaucoma"]}'),
+('10000000-0000-0000-0000-000000000015', 'Rina Parvin', '+8801322334455', '1975-05-20', 'AB+', '+8801322334466', '{"allergies": ["Ibuprofen"], "chronic_conditions": ["Asthma"]}');
+
+-- 3. AMBULANCE TABLE (10 Ambulances in Dhaka)
+INSERT INTO ambulance (ambulance_id, vehicle_number, status, base_hospital_id, current_latitude, current_longitude, last_maintenance_date) VALUES
+('20000000-0000-0000-0000-000000000001', 'Dhaka Metro Cha-11-2045', 'DISPATCHED', '00000000-0000-0000-0000-000000000001', 23.7932, 90.4075, '2026-03-15'),
+('20000000-0000-0000-0000-000000000002', 'Dhaka Metro Cha-15-9988', 'AVAILABLE', '00000000-0000-0000-0000-000000000002', 23.7541, 90.3802, '2026-02-28'),
+('20000000-0000-0000-0000-000000000003', 'Dhaka Metro Cha-13-4455', 'AVAILABLE', '00000000-0000-0000-0000-000000000003', 23.8115, 90.4300, '2026-04-01'),
+('20000000-0000-0000-0000-000000000004', 'Dhaka Metro Cha-14-7722', 'DISPATCHED', '00000000-0000-0000-0000-000000000004', 23.7310, 90.3950, '2026-01-10'),
+('20000000-0000-0000-0000-000000000005', 'Dhaka Metro Cha-12-8833', 'MAINTENANCE','00000000-0000-0000-0000-000000000005', 23.8180, 90.4020, '2025-11-20'),
+('20000000-0000-0000-0000-000000000006', 'Dhaka Metro Cha-11-1011', 'AVAILABLE', '00000000-0000-0000-0000-000000000001', 23.8055, 90.4150, '2026-03-20'),
+('20000000-0000-0000-0000-000000000007', 'Dhaka Metro Cha-15-2022', 'DISPATCHED', '00000000-0000-0000-0000-000000000002', 23.7600, 90.3750, '2026-02-15'),
+('20000000-0000-0000-0000-000000000008', 'Dhaka Metro Cha-13-3033', 'AVAILABLE', '00000000-0000-0000-0000-000000000003', 23.8100, 90.4250, '2026-03-05'),
+('20000000-0000-0000-0000-000000000009', 'Dhaka Metro Cha-14-4044', 'AVAILABLE', '00000000-0000-0000-0000-000000000004', 23.7250, 90.3980, '2026-01-25'),
+('20000000-0000-0000-0000-000000000010', 'Dhaka Metro Cha-12-5055', 'OFF_DUTY',  '00000000-0000-0000-0000-000000000005', 23.8200, 90.4050, '2026-03-30');
+
+-- 4. EQUIPMENT TABLE (15 Pieces of High-Value Portable Medical Equipment)
+-- Note: Mapped to Ambulance_ID per the strict DDL schema requirements to avoid FK failures.
+INSERT INTO equipment (equipment_id, ambulance_id, item_name, quantity, expiration_date, usage_hours) VALUES
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000001', 'Portable Ventilator (Transport)', 1, '2030-12-31', 4850),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000001', 'Defibrillator (AED)', 1, '2028-06-15', 1200),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000002', 'Mobile ECG Monitor', 1, '2029-01-20', 3400),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000002', 'Oxygen Cylinder (J-Size)', 2, '2027-11-10', 450),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000003', 'Portable X-Ray Unit', 1, '2032-05-05', 5100), -- High usage to trigger maintenance analytical queries
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000003', 'Defibrillator (AED)', 1, '2028-06-15', 800),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000004', 'Transport Incubator', 1, '2029-09-30', 2100),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000004', 'Suction Machine', 1, '2027-03-12', 3600),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000005', 'Mobile Ultrasound', 1, '2031-08-22', 4950),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000006', 'Defibrillator (AED)', 1, '2028-06-15', 1500),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000007', 'Portable Ventilator (Transport)', 1, '2030-12-31', 4980),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000008', 'Oxygen Cylinder (J-Size)', 2, '2027-11-10', 600),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000009', 'Mobile ECG Monitor', 1, '2029-01-20', 2200),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000010', 'Advanced Trauma Kit', 3, '2026-12-01', 0),
+(gen_random_uuid(), '20000000-0000-0000-0000-000000000010', 'Suction Machine', 1, '2027-03-12', 4100);
+
+-- 5. ADMIN_STAFF TABLE (10 Users)
+INSERT INTO admin_staff (first_name, last_name, role, email, phone_number) VALUES
+('Sohan', 'Rahman', 'SuperAdmin', 'admin.sohan@healthlogix.bd', '+8801994740001'),
+('Ashiqur', 'Rahman', 'SuperAdmin', 'ashiq@healthlogix.bd', '+8801711000002'),
+('Jannatul', 'Ferdous', 'Hospital_Dispatcher', 'dispatch.united@healthlogix.bd', '+8801811000003'),
+('Shakil', 'Ahmed', 'Hospital_Dispatcher', 'dispatch.square@healthlogix.bd', '+8801511000004'),
+('Farzana', 'Yasmin', 'Hospital_Dispatcher', 'dispatch.evercare@healthlogix.bd', '+8801311000005'),
+('Habib', 'Ullah', 'Hospital_Dispatcher', 'dispatch.dmch@healthlogix.bd', '+8801911000006'),
+('Tanjina', 'Akter', 'Hospital_Dispatcher', 'dispatch.kurmitola@healthlogix.bd', '+8801711000007'),
+('Nazmul', 'Huda', 'Fleet_Manager', 'fleet@healthlogix.bd', '+8801811000008'),
+('Mizanur', 'Rahman', 'IT_Support', 'it.support@healthlogix.bd', '+8801511000009'),
+('Rumana', 'Ali', 'Auditor', 'audit@healthlogix.bd', '+8801311000010');
+
+-- ------------------------------------------------------------------------------------
+-- PHASE 2: TRANSACTIONAL DATA
+-- ------------------------------------------------------------------------------------
+
+-- 6. EMERGENCY_REQUEST TABLE (30 Rows, mixed states)
+-- Using hardcoded UUIDs for Patients and Hospitals to match Phase 1
+INSERT INTO emergency_request (request_id, patient_id, ambulance_id, destination_hospital_id, status, pickup_latitude, pickup_longitude, request_time, dispatch_time, arrival_time) VALUES
+-- Admitted / Completed Cases (Past)
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', 'ADMITTED', 23.7940, 90.4040, NOW() - INTERVAL '3 days 4 hours', NOW() - INTERVAL '3 days 3 hours 55 mins', NOW() - INTERVAL '3 days 3 hours 30 mins'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 'ADMITTED', 23.7500, 90.3800, NOW() - INTERVAL '2 days 6 hours', NOW() - INTERVAL '2 days 5 hours 50 mins', NOW() - INTERVAL '2 days 5 hours 20 mins'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', 'ADMITTED', 23.8000, 90.4200, NOW() - INTERVAL '1 day 2 hours', NOW() - INTERVAL '1 day 1 hour 58 mins', NOW() - INTERVAL '1 day 1 hour 40 mins'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000004', 'ADMITTED', 23.7200, 90.3900, NOW() - INTERVAL '12 hours', NOW() - INTERVAL '11 hours 55 mins', NOW() - INTERVAL '11 hours 20 mins'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000003', 'COMPLETED', 23.8200, 90.4300, NOW() - INTERVAL '5 hours', NOW() - INTERVAL '4 hours 56 mins', NOW() - INTERVAL '4 hours 10 mins'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', 'COMPLETED', 23.8100, 90.4100, NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours 50 mins', NOW() - INTERVAL '3 hours 15 mins'),
+
+-- Currently Dispatched / En Route (Matches Active Ambulances from Phase 1: a1, a4, a7)
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'EN_ROUTE_TO_HOSPITAL', 23.7805, 90.4102, NOW() - INTERVAL '45 mins', NOW() - INTERVAL '42 mins', NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000004', 'EN_ROUTE_TO_PATIENT',  23.7150, 90.3950, NOW() - INTERVAL '15 mins', NOW() - INTERVAL '13 mins', NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000002', 'EN_ROUTE_TO_HOSPITAL', 23.7700, 90.3700, NOW() - INTERVAL '30 mins', NOW() - INTERVAL '28 mins', NULL),
+
+-- Pending Requests (Waiting for assignment)
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000002', NULL, NULL, 'PENDING', 23.7900, 90.4000, NOW() - INTERVAL '2 mins', NULL, NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000005', NULL, NULL, 'PENDING', 23.8300, 90.4100, NOW() - INTERVAL '5 mins', NULL, NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000008', NULL, NULL, 'PENDING', 23.7400, 90.3800, NOW() - INTERVAL '1 min', NULL, NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000010', NULL, NULL, 'PENDING', 23.8050, 90.4250, NOW() - INTERVAL '3 mins', NULL, NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000013', NULL, NULL, 'PENDING', 23.7650, 90.3900, NOW() - INTERVAL '8 mins', NULL, NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000015', NULL, NULL, 'PENDING', 23.7350, 90.4000, NOW() - INTERVAL '4 mins', NULL, NULL),
+
+-- Cancelled Requests
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000003', NULL, NULL, 'CANCELLED', 23.7900, 90.4000, NOW() - INTERVAL '2 days', NULL, NULL),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000002', NULL, 'CANCELLED', 23.7500, 90.3800, NOW() - INTERVAL '1 day', NOW() - INTERVAL '23 hours 55 mins', NULL),
+
+-- Padding out remaining records to reach ~30 for robust testing
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', 'COMPLETED', 23.8050, 90.4250, NOW() - INTERVAL '10 days', NOW() - INTERVAL '9 days 23 hours', NOW() - INTERVAL '9 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', 'COMPLETED', 23.7900, 90.4000, NOW() - INTERVAL '11 days', NOW() - INTERVAL '10 days 23 hours', NOW() - INTERVAL '10 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000004', 'COMPLETED', 23.7200, 90.3900, NOW() - INTERVAL '12 days', NOW() - INTERVAL '11 days 23 hours', NOW() - INTERVAL '11 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000005', 'COMPLETED', 23.8300, 90.4100, NOW() - INTERVAL '13 days', NOW() - INTERVAL '12 days 23 hours', NOW() - INTERVAL '12 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 'COMPLETED', 23.7650, 90.3900, NOW() - INTERVAL '14 days', NOW() - INTERVAL '13 days 23 hours', NOW() - INTERVAL '13 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', 'COMPLETED', 23.7400, 90.3800, NOW() - INTERVAL '15 days', NOW() - INTERVAL '14 days 23 hours', NOW() - INTERVAL '14 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', 'COMPLETED', 23.7200, 90.3900, NOW() - INTERVAL '16 days', NOW() - INTERVAL '15 days 23 hours', NOW() - INTERVAL '15 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000004', 'COMPLETED', 23.8050, 90.4250, NOW() - INTERVAL '17 days', NOW() - INTERVAL '16 days 23 hours', NOW() - INTERVAL '16 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000005', 'COMPLETED', 23.8200, 90.4300, NOW() - INTERVAL '18 days', NOW() - INTERVAL '17 days 23 hours', NOW() - INTERVAL '17 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 'COMPLETED', 23.8100, 90.4100, NOW() - INTERVAL '19 days', NOW() - INTERVAL '18 days 23 hours', NOW() - INTERVAL '18 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000013', '20000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', 'COMPLETED', 23.7650, 90.3900, NOW() - INTERVAL '20 days', NOW() - INTERVAL '19 days 23 hours', NOW() - INTERVAL '19 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', 'COMPLETED', 23.7700, 90.3700, NOW() - INTERVAL '21 days', NOW() - INTERVAL '20 days 23 hours', NOW() - INTERVAL '20 days 22 hours'),
+(gen_random_uuid(), '10000000-0000-0000-0000-000000000015', '20000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000004', 'COMPLETED', 23.7350, 90.4000, NOW() - INTERVAL '22 days', NOW() - INTERVAL '21 days 23 hours', NOW() - INTERVAL '21 days 22 hours');
+
+-- 7. IOT_LOCATION_LOG TABLE (50 Rows Simulating Route & "Ghost Trip" Fraud)
+-- Simulating Ambulance A1 moving through Dhaka traffic towards United Hospital over 25 mins
+INSERT INTO iot_location_log (ambulance_id, latitude, longitude, speed_kmh, recorded_at) VALUES
+('20000000-0000-0000-0000-000000000001', 23.7805, 90.4102, 45.5, NOW() - INTERVAL '40 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7815, 90.4105, 38.0, NOW() - INTERVAL '39 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7825, 90.4110, 25.5, NOW() - INTERVAL '38 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7830, 90.4115, 15.0, NOW() - INTERVAL '37 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7835, 90.4120, 10.5, NOW() - INTERVAL '36 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7845, 90.4125, 40.0, NOW() - INTERVAL '35 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7855, 90.4130, 42.5, NOW() - INTERVAL '34 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7865, 90.4135, 30.0, NOW() - INTERVAL '33 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7870, 90.4140, 0.0,  NOW() - INTERVAL '32 mins'), -- Traffic light stop
+('20000000-0000-0000-0000-000000000001', 23.7870, 90.4140, 0.0,  NOW() - INTERVAL '31 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7880, 90.4145, 20.5, NOW() - INTERVAL '30 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7895, 90.4150, 50.0, NOW() - INTERVAL '29 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7910, 90.4155, 48.0, NOW() - INTERVAL '28 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7925, 90.4160, 35.5, NOW() - INTERVAL '27 mins'),
+('20000000-0000-0000-0000-000000000001', 23.7932, 90.4075, 40.0, NOW() - INTERVAL '26 mins'), -- Current location in Phase 1
+
+-- Simulating Ambulance A4 moving towards DMCH (Current: 23.7310, 90.3950)
+('20000000-0000-0000-0000-000000000004', 23.7150, 90.3950, 55.0, NOW() - INTERVAL '12 mins'),
+('20000000-0000-0000-0000-000000000004', 23.7180, 90.3950, 45.0, NOW() - INTERVAL '11 mins'),
+('20000000-0000-0000-0000-000000000004', 23.7220, 90.3950, 40.0, NOW() - INTERVAL '10 mins'),
+('20000000-0000-0000-0000-000000000004', 23.7250, 90.3950, 25.0, NOW() - INTERVAL '9 mins'),
+('20000000-0000-0000-0000-000000000004', 23.7280, 90.3950, 15.0, NOW() - INTERVAL '8 mins'),
+('20000000-0000-0000-0000-000000000004', 23.7310, 90.3950, 30.0, NOW() - INTERVAL '7 mins'),
+
+-- Simulating "Ghost Trip" Fraud for Ambulance A7 (Speed 0 for > 15 mins while Dispatched)
+('20000000-0000-0000-0000-000000000007', 23.7650, 90.3700, 40.0, NOW() - INTERVAL '27 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7660, 90.3710, 30.0, NOW() - INTERVAL '26 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '25 mins'), -- Stopped
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '24 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '23 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '22 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '21 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '20 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '19 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '18 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '17 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '16 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '15 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '14 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '13 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '12 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '11 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '10 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '9 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '8 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '7 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7665, 90.3720, 0.0,  NOW() - INTERVAL '6 mins'),
+('20000000-0000-0000-0000-000000000007', 23.7700, 90.3700, 35.0, NOW() - INTERVAL '5 mins'), -- Finally moves
+('20000000-0000-0000-0000-000000000007', 23.7700, 90.3700, 40.0, NOW() - INTERVAL '4 mins');

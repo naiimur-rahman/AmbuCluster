@@ -1,234 +1,212 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
 const { Pool } = require('pg');
+require('dotenv').config();
 
 const app = express();
+const port = process.env.PORT || 5000;
+
 app.use(cors());
 app.use(express.json());
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
-});
-
+// Initialize PostgreSQL connection pool
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'ambulance_db',
-  password: 'postgres',
-  port: 5432,
+  user: process.env.DB_USER || 'jules',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'ambucluster',
+  password: process.env.DB_PASSWORD || '',
+  port: process.env.DB_PORT || 5432,
 });
 
-// Calculate distance function if dropped
-pool.query(`
-CREATE OR REPLACE FUNCTION calculate_distance(lat1 numeric, lon1 numeric, lat2 numeric, lon2 numeric)
-RETURNS numeric AS $$
-DECLARE
-    x numeric = 69.1 * (lat2 - lat1);
-    y numeric = 69.1 * (lon2 - lon1) * cos(lat1 / 57.3);
-BEGIN
-    RETURN sqrt(x * x + y * y);
-END
-$$ LANGUAGE plpgsql;
-`).catch(console.error);
-
-// --- API Endpoints ---
-
-// Get all users
-app.get('/api/users', async (req, res) => {
+// Helper for generic queries
+const query = async (text, params) => {
   try {
-    const { rows } = await pool.query('SELECT user_id, name, email, role FROM Users');
-    res.json(rows);
+    const res = await pool.query(text, params);
+    return res.rows;
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Database query error:', err);
+    throw err;
   }
+};
+
+
+// --- API Routes ---
+
+// Healthcheck
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
-// Login
-app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
+
+// 1. Patient Dashboard APIs
+app.get('/api/patient/:id/activity', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT user_id, name, email, role FROM Users WHERE email = $1 AND password_hash = $2', [email, password]);
-    if (rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const user = rows[0];
-    let extraData = {};
-
-    if (user.role === 'Hospital') {
-      const hospital = await pool.query('SELECT * FROM Hospitals WHERE hospital_id = $1', [user.user_id]);
-      extraData.hospital = hospital.rows[0];
-    } else if (user.role === 'Driver') {
-      const ambulance = await pool.query('SELECT * FROM Ambulances WHERE driver_id = $1', [user.user_id]);
-      extraData.ambulance = ambulance.rows[0];
+    // We fetch emergency requests for a specific patient.
+    // For the demo, we will use the first patient if no ID or an invalid UUID is provided
+    let patientId = req.params.id;
+    if (patientId === 'demo') {
+        const patient = await query('SELECT patient_id FROM patient LIMIT 1');
+        patientId = patient[0]?.patient_id;
     }
 
-    res.json({ user, ...extraData });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    if (!patientId) return res.status(404).json({ error: 'Patient not found' });
 
-// Get Hospitals
-app.get('/api/hospitals', async (req, res) => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM Hospitals');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get Ambulances
-app.get('/api/ambulances', async (req, res) => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM Ambulances');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get Emergency Requests (for hospital)
-app.get('/api/requests/hospital/:hospitalId', async (req, res) => {
-  try {
-    const { rows } = await pool.query(`
-      SELECT t.*, u.name as patient_name
-      FROM Trips t
-      JOIN Users u ON t.patient_id = u.user_id
-      WHERE t.destination_hospital_id = $1
-      ORDER BY t.request_time DESC
-    `, [req.params.hospitalId]);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Advanced Admin Analytics Endpoint
-app.get('/api/analytics', async (req, res) => {
-  try {
-    const systemOverview = await pool.query(`
+    const sql = `
       SELECT
-        (SELECT COUNT(*) FROM Ambulances) as total_ambulances,
-        (SELECT COUNT(*) FROM Ambulances WHERE status = 'Available') as available_ambulances,
-        (SELECT COUNT(*) FROM Trips) as total_requests,
-        (SELECT COUNT(*) FROM Trips WHERE status = 'Pending') as pending_requests
-    `);
+        request_id as id,
+        TO_CHAR(request_time, 'YYYY-MM-DD') as date,
+        'Emergency Ambulance' as service,
+        CASE WHEN status IN ('COMPLETED', 'ADMITTED') THEN 'Completed' ELSE 'Pending' END as status
+      FROM emergency_request
+      WHERE patient_id = $1
+      ORDER BY request_time DESC
+      LIMIT 10
+    `;
+    const data = await query(sql, [patientId]);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    // In a real scenario, this would use a materialized view or complex CTE like the original.
-    // Simplifying here to use the new Hospitals table.
-    const hospitalStats = await pool.query(`
-        SELECT
-            h.hospital_id as id,
-            h.name,
-            'General' as type,
-            (SELECT COUNT(*) FROM Trips t WHERE t.destination_hospital_id = h.hospital_id) as total_emergencies_handled,
-            COALESCE(ROUND((h.available_general_beds::numeric / 50.0) * 100), 0) as occupancy_rate_percent,
-            RANK() OVER (ORDER BY (SELECT COUNT(*) FROM Trips t WHERE t.destination_hospital_id = h.hospital_id) DESC) as demand_rank
-        FROM Hospitals h
-        LIMIT 10
-    `);
+
+// 2. Admin Dashboard APIs
+app.get('/api/admin/metrics', async (req, res) => {
+  try {
+    const activeAmbulancesResult = await query("SELECT COUNT(*) FROM ambulance WHERE status IN ('AVAILABLE', 'DISPATCHED')");
+    const standbyAmbulancesResult = await query("SELECT COUNT(*) FROM ambulance WHERE status = 'AVAILABLE'");
+
+    // Total ER Patients (currently ADMITTED)
+    const erPatientsResult = await query("SELECT COUNT(*) FROM emergency_request WHERE status = 'ADMITTED'");
+
+    // Bed occupancy
+    const bedsResult = await query("SELECT SUM(total_er_beds) as total, SUM(available_er_beds) as available FROM hospital");
+    const totalBeds = bedsResult[0].total || 1; // prevent division by zero
+    const availableBeds = bedsResult[0].available || 0;
+    const occupancyPercent = Math.round(((totalBeds - availableBeds) / totalBeds) * 100);
+
+    const alertsResult = await query("SELECT COUNT(*) FROM maintenance_alert WHERE is_resolved = false");
 
     res.json({
-      hospitals: hospitalStats.rows,
-      audits: [], // Keeping audits empty for now since the new schema didn't include the audit trigger/table
-      overview: systemOverview.rows[0]
+      activeAmbulances: activeAmbulancesResult[0].count,
+      standbyAmbulances: standbyAmbulancesResult[0].count,
+      totalERPatients: erPatientsResult[0].count,
+      bedOccupancyPercent: occupancyPercent,
+      activeAlerts: alertsResult[0].count
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Request Ambulance
-app.post('/api/request-ambulance', async (req, res) => {
-  const { patientId, type, lat, lng } = req.body;
+app.get('/api/admin/hourly-requests', async (req, res) => {
+  // Using mock data for the chart, but we could aggregate emergency_request by hour
+  const mockHourlyData = [
+    { time: '00:00', requests: 45 }, { time: '04:00', requests: 30 },
+    { time: '08:00', requests: 120 }, { time: '12:00', requests: 150 },
+    { time: '16:00', requests: 180 }, { time: '20:00', requests: 110 },
+    { time: '24:00', requests: 60 },
+  ];
+  res.json(mockHourlyData);
+});
+
+app.get('/api/admin/hospital-efficiency', async (req, res) => {
   try {
-    const assignmentQuery = await pool.query(`
-      WITH nearest_amb AS (
-          SELECT ambulance_id, calculate_distance($1, $2, current_lat, current_lng) as distance
-          FROM Ambulances
-          WHERE status = 'Available' AND type = $3
-          ORDER BY distance ASC
-          LIMIT 1
-      ),
-      nearest_hosp AS (
-          SELECT hospital_id, calculate_distance($1, $2, latitude, longitude) as distance
-          FROM Hospitals
-          WHERE available_general_beds > 0 OR available_icu_beds > 0
-          ORDER BY distance ASC
-          LIMIT 1
-      )
-      SELECT
-          (SELECT ambulance_id FROM nearest_amb) as ambulance_id,
-          (SELECT hospital_id FROM nearest_hosp) as hospital_id
-    `, [lat, lng, type || 'Basic']);
+    // Ensure the view is fresh before querying (in a real app, refresh this via chron, not every request)
+    await pool.query('REFRESH MATERIALIZED VIEW MV_Hospital_Efficiency');
 
-    const assignment = assignmentQuery.rows[0];
-
-    if (!assignment.ambulance_id) {
-      return res.status(400).json({ error: 'No ambulances currently available in the system for this type' });
-    }
-
-    if (!assignment.hospital_id) {
-      return res.status(400).json({ error: 'No hospitals with available beds found' });
-    }
-
-    const insertResult = await pool.query(`
-      INSERT INTO Trips (patient_id, ambulance_id, destination_hospital_id, status, pickup_lat, pickup_lng)
-      VALUES ($1, $2, $3, 'Accepted', $4, $5)
-      RETURNING *
-    `, [patientId, assignment.ambulance_id, assignment.hospital_id, lat, lng]);
-
-    const newTrip = insertResult.rows[0];
-
-    io.emit('new_request', newTrip);
-    io.emit('ambulance_assigned', { ambulanceId: assignment.ambulance_id, tripId: newTrip.trip_id });
-
-    res.json(newTrip);
+    const data = await query("SELECT hospital_name as name, avg_response_mins as time FROM MV_Hospital_Efficiency ORDER BY avg_response_mins ASC");
+    res.json(data);
   } catch (err) {
-    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/maintenance-alerts', async (req, res) => {
+  try {
+    await pool.query('REFRESH MATERIALIZED VIEW MV_Predictive_Maintenance');
+
+    const sql = `
+      SELECT
+        v.vehicle_number as id,
+        h.hospital_name as hospital,
+        v.item_name as machine,
+        v.current_hours as hours,
+        CASE
+          WHEN v.current_hours >= 5000 THEN 'High'
+          WHEN v.current_hours >= 4900 THEN 'Medium'
+          ELSE 'Low'
+        END as risk
+      FROM MV_Predictive_Maintenance v
+      JOIN ambulance a ON a.vehicle_number = v.vehicle_number
+      LEFT JOIN hospital h ON a.base_hospital_id = h.hospital_id
+    `;
+    const data = await query(sql);
+    res.json(data);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 
-// --- Socket.io Real-time Updates ---
-
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
-  socket.on('update_location', async (data) => {
-    const { ambulanceId, lat, lng } = data;
-    try {
-      await pool.query('UPDATE Ambulances SET current_lat = $1, current_lng = $2 WHERE ambulance_id = $3', [lat, lng, ambulanceId]);
-      io.emit('location_updated', { ambulanceId, lat, lng });
-    } catch (err) {
-      console.error('Error updating location:', err);
+// 3. Hospital Dashboard APIs
+app.get('/api/hospital/:id/incoming', async (req, res) => {
+  try {
+    // If no hospital ID provided, just get the first one for the demo
+    let hospitalId = req.params.id;
+    if (hospitalId === 'demo') {
+        const hospital = await query('SELECT hospital_id FROM hospital LIMIT 1');
+        hospitalId = hospital[0]?.hospital_id;
     }
-  });
 
-  socket.on('update_request_status', async (data) => {
-    const { tripId, status, ambulanceId } = data;
-    try {
-      await pool.query('UPDATE Trips SET status = $1 WHERE trip_id = $2', [status, tripId]);
-      // Note: Trigger handles updating the ambulance status
-      io.emit('request_status_updated', { tripId, status, ambulanceId });
-    } catch (err) {
-      console.error('Error updating request status:', err);
-    }
-  });
+    if (!hospitalId) return res.status(404).json({ error: 'Hospital not found' });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
+    const sql = `
+      SELECT
+        a.vehicle_number as id,
+        '10 mins' as eta, -- Simplified for demo
+        ROUND(ST_Distance(
+            ST_MakePoint(a.current_longitude::FLOAT, a.current_latitude::FLOAT)::GEOGRAPHY,
+            ST_MakePoint(e.pickup_longitude::FLOAT, e.pickup_latitude::FLOAT)::GEOGRAPHY
+        )::NUMERIC / 1000, 1) || ' km' as distance,
+        'Stable' as status, -- Simplified
+        'Unknown' as patient, -- Simplified
+        'text-emerald-600 bg-emerald-50 border-emerald-200' as color
+      FROM emergency_request e
+      JOIN ambulance a ON e.ambulance_id = a.ambulance_id
+      WHERE e.destination_hospital_id = $1
+        AND e.status IN ('EN_ROUTE_TO_HOSPITAL')
+    `;
+    const data = await query(sql, [hospitalId]);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.get('/api/hospital/:id/stats', async (req, res) => {
+  try {
+    let hospitalId = req.params.id;
+    if (hospitalId === 'demo') {
+        const hospital = await query('SELECT hospital_id FROM hospital LIMIT 1');
+        hospitalId = hospital[0]?.hospital_id;
+    }
+
+    if (!hospitalId) return res.status(404).json({ error: 'Hospital not found' });
+
+    const hospitalStats = await query("SELECT available_er_beds FROM hospital WHERE hospital_id = $1", [hospitalId]);
+    const activeER = await query("SELECT COUNT(*) FROM emergency_request WHERE destination_hospital_id = $1 AND status = 'ADMITTED'", [hospitalId]);
+
+    res.json({
+        availableBeds: hospitalStats[0]?.available_er_beds || 0,
+        activeERPatients: activeER[0]?.count || 0
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+app.listen(port, () => {
+  console.log(`Backend server running on http://localhost:5000`);
 });
