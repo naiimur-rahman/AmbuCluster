@@ -3,11 +3,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "postgis";
 
 -- Enums for highly constrained, indexed status values
-CREATE TYPE ambulance_status AS ENUM ('AVAILABLE', 'DISPATCHED', 'MAINTENANCE', 'OFF_DUTY');
-CREATE TYPE emergency_status AS ENUM ('PENDING', 'EN_ROUTE_TO_PATIENT', 'EN_ROUTE_TO_HOSPITAL', 'ADMITTED', 'COMPLETED', 'CANCELLED');
-
--- 1. Admin_Staff Table
-CREATE TABLE admin_staff (
+-- 1. Staff Table
+CREATE TABLE staff (
     staff_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
@@ -44,7 +41,9 @@ CREATE TABLE hospital (
 CREATE TABLE ambulance (
     ambulance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     vehicle_number VARCHAR(50) UNIQUE NOT NULL,
-    status ambulance_status DEFAULT 'AVAILABLE',
+    status VARCHAR(50) DEFAULT 'AVAILABLE',
+    driver_id UUID REFERENCES staff(staff_id) ON DELETE SET NULL,
+    paramedic_id UUID REFERENCES staff(staff_id) ON DELETE SET NULL,
     base_hospital_id UUID REFERENCES hospital(hospital_id) ON DELETE SET NULL,
     current_latitude NUMERIC(10, 8),
     current_longitude NUMERIC(11, 8),
@@ -68,7 +67,8 @@ CREATE TABLE emergency_request (
     patient_id UUID NOT NULL REFERENCES patient(patient_id) ON DELETE RESTRICT,
     ambulance_id UUID REFERENCES ambulance(ambulance_id) ON DELETE SET NULL,
     destination_hospital_id UUID REFERENCES hospital(hospital_id) ON DELETE RESTRICT,
-    status emergency_status DEFAULT 'PENDING',
+    dispatched_by UUID REFERENCES staff(staff_id) ON DELETE SET NULL,
+    status VARCHAR(50) DEFAULT 'PENDING',
     pickup_latitude NUMERIC(10, 8) NOT NULL,
     pickup_longitude NUMERIC(11, 8) NOT NULL,
     request_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -110,7 +110,17 @@ CREATE TABLE maintenance_alert (
     equipment_id UUID REFERENCES equipment(equipment_id) ON DELETE CASCADE,
     alert_reason TEXT NOT NULL,
     alert_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    is_resolved BOOLEAN DEFAULT FALSE
+    is_resolved BOOLEAN DEFAULT FALSE,
+    resolved_by UUID REFERENCES staff(staff_id) ON DELETE SET NULL
+);
+
+-- Vehicle Maintenance Log Table
+CREATE TABLE vehicle_maintenance_log (
+    log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ambulance_id UUID REFERENCES ambulance(ambulance_id) ON DELETE CASCADE,
+    issue_description TEXT NOT NULL,
+    service_date DATE NOT NULL,
+    cost DECIMAL(10, 2) NOT NULL
 );
 
 -- ==========================================
