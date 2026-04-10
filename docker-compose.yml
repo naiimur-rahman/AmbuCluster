@@ -1,41 +1,31 @@
+version: '3.8'
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: jules
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ambucluster
+  app:
+    build: .
     ports:
-      - "5432:5432"
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ambucluster
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  db:
+    image: postgis/postgis:15-3.3-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ambucluster
+    ports:
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Automatically initialize database with schema and seed files
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
-      - ./db/seed.sql:/docker-entrypoint-initdb.d/2-seed.sql
-
-  backend:
-    build: ./backend
-    ports:
-      - "5000:5000"
-    environment:
-      DB_USER: jules
-      DB_PASSWORD: postgres
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: ambucluster
-    depends_on:
-      - db
-    command: npm start
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:5000
-    depends_on:
-      - backend
-    command: npm run dev -- --host 0.0.0.0
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ambucluster"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 volumes:
   postgres_data:
