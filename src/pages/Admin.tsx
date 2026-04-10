@@ -17,12 +17,10 @@ import {
   Activity,
   ShieldAlert,
   Clock,
-  Users,
   Loader2,
   ArrowLeft,
-  Wrench,
-  Ghost,
-  Stethoscope
+  Radar,
+  Siren
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -112,12 +110,16 @@ export default function Admin() {
     }
   };
 
+  const pendingEmergencies = emergencies.filter((emergency) => emergency.status === 'pending').length;
+  const activeUnits = ambulances.filter((ambulance) => ambulance.status !== 'maintenance').length;
+  const readyUnits = ambulances.filter((ambulance) => ambulance.status === 'available').length;
+
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
-        <div className="flex flex-col items-center gap-4">
+      <div className="portal-shell flex items-center justify-center">
+        <div className="premium-card flex flex-col items-center gap-4 px-8 py-10 text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground animate-pulse">Connecting to Database...</p>
+          <p className="text-white/70 animate-pulse">Connecting to dispatch database...</p>
         </div>
       </div>
     );
@@ -125,14 +127,14 @@ export default function Admin() {
 
   if (error) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background text-foreground p-4">
-        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+      <div className="portal-shell flex items-center justify-center">
+        <div className="premium-card flex max-w-md flex-col items-center gap-4 p-8 text-center">
           <div className="p-4 bg-destructive/10 rounded-full">
             <AlertTriangle className="w-12 h-12 text-destructive" />
           </div>
           <h2 className="text-2xl font-bold tracking-tight">Database Connection Error</h2>
-          <p className="text-muted-foreground">{error}</p>
-          <div className="bg-accent/50 border border-border p-4 rounded-lg text-sm text-left w-full mt-4">
+          <p className="text-white/70">{error}</p>
+          <div className="w-full rounded-2xl border border-white/10 bg-white/6 p-4 text-left text-sm">
             <p className="font-medium mb-2">Troubleshooting steps:</p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Ensure your PostgreSQL database is running.</li>
@@ -150,12 +152,12 @@ export default function Admin() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
+      <div className="ambient-shell flex h-screen overflow-hidden text-foreground font-sans">
         {/* Sidebar */}
         <motion.aside 
           initial={false}
           animate={{ width: isSidebarOpen ? 260 : 80 }}
-          className="relative flex flex-col border-r border-border bg-card/50 backdrop-blur-xl z-20"
+          className="relative z-20 flex flex-col border-r border-white/10 bg-slate-950/45 backdrop-blur-2xl"
         >
           <div className="p-6 flex items-center gap-3">
             <Link to="/">
@@ -184,11 +186,11 @@ export default function Admin() {
                 onClick={() => setActiveView(item.id as View)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all group ${
                   activeView === item.id 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                    ? 'bg-white text-slate-950 shadow-lg shadow-white/10' 
+                    : 'text-white/62 hover:bg-white/8 hover:text-white'
                 }`}
               >
-                <item.icon className={`w-5 h-5 shrink-0 ${activeView === item.id ? 'text-primary-foreground' : 'group-hover:text-primary'}`} />
+                <item.icon className={`w-5 h-5 shrink-0 ${activeView === item.id ? 'text-slate-950' : 'group-hover:text-orange-300'}`} />
                 {isSidebarOpen && (
                   <motion.span 
                     initial={{ opacity: 0 }}
@@ -210,7 +212,7 @@ export default function Admin() {
           <div className="p-4 border-t border-border">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent text-muted-foreground transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/8 text-white/62 transition-colors"
             >
               {isSidebarOpen ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
               {isSidebarOpen && <span className="text-sm">Collapse Sidebar</span>}
@@ -221,19 +223,19 @@ export default function Admin() {
         {/* Main Content */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
           {/* Header */}
-          <header className="h-16 border-b border-border bg-card/30 backdrop-blur-md flex items-center justify-between px-8 z-10">
+          <header className="flex h-16 items-center justify-between border-b border-white/10 bg-slate-950/28 px-8 backdrop-blur-xl z-10">
             <div className="flex items-center gap-4 flex-1 max-w-xl">
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search fleet, incidents, or personnel..." 
-                  className="pl-10 bg-background/50 border-border/50 focus-visible:ring-primary"
+                  className="input-surface pl-10 focus-visible:ring-primary"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/50 rounded-full border border-border/50">
+              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1.5">
                 <div className="status-pulse">
                   <span className="status-pulse-inner bg-green-500"></span>
                   <span className="status-pulse-dot bg-green-500"></span>
@@ -262,6 +264,45 @@ export default function Admin() {
 
           {/* View Content */}
           <div className="flex-1 overflow-y-auto p-8">
+            <section className="portal-header mb-8">
+              <div className="space-y-4">
+                <span className="section-kicker">Mission Control</span>
+                <div>
+                  <h1 className="text-3xl font-semibold tracking-[-0.05em] text-white md:text-4xl">Citywide emergency coordination</h1>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-white/68 md:text-base">
+                    Monitor response pressure, fleet readiness, and incident flow from a single tactical surface.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="portal-chip">
+                    <Siren className="h-3.5 w-3.5 text-orange-300" />
+                    {pendingEmergencies} pending emergencies
+                  </span>
+                  <span className="portal-chip">
+                    <Truck className="h-3.5 w-3.5 text-cyan-300" />
+                    {readyUnits}/{ambulances.length} units ready
+                  </span>
+                  <span className="portal-chip">
+                    <Radar className="h-3.5 w-3.5 text-emerald-300" />
+                    {clusters.length} live optimization clusters
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid w-full gap-3 md:max-w-md md:grid-cols-2">
+                <div className="metric-tile">
+                  <p className="text-xs uppercase tracking-[0.22em] text-white/45">Active fleet</p>
+                  <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">{activeUnits}</p>
+                  <p className="mt-1 text-sm text-white/58">Units visible across the network</p>
+                </div>
+                <div className="metric-tile">
+                  <p className="text-xs uppercase tracking-[0.22em] text-white/45">Portal focus</p>
+                  <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">{navItems.length}</p>
+                  <p className="mt-1 text-sm text-white/58">Operational workspaces available</p>
+                </div>
+              </div>
+            </section>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeView}
@@ -280,4 +321,3 @@ export default function Admin() {
     </TooltipProvider>
   );
 }
-

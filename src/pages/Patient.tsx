@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, AlertTriangle, ArrowLeft, CheckCircle2, Loader2, MapPin, Clock, CreditCard, Navigation } from 'lucide-react';
+import { User, AlertTriangle, ArrowLeft, CheckCircle2, Loader2, MapPin, Clock, CreditCard, Navigation, ShieldPlus, HeartPulse } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
-// Fix leaflet icon issue in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -17,16 +16,15 @@ L.Icon.Default.mergeOptions({
 const ambulanceIcon = new L.Icon({
   iconUrl: 'https://cdn-icons-png.flaticon.com/512/1048/1048314.png',
   iconSize: [32, 32],
-  iconAnchor: [16, 16]
+  iconAnchor: [16, 16],
 });
 
 const hospitalIcon = new L.Icon({
   iconUrl: 'https://cdn-icons-png.flaticon.com/512/4320/4320337.png',
   iconSize: [32, 32],
-  iconAnchor: [16, 16]
+  iconAnchor: [16, 16],
 });
 
-// Component to recenter map when location changes
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
@@ -34,6 +32,8 @@ function MapUpdater({ center }: { center: [number, number] }) {
   }, [center, map]);
   return null;
 }
+
+const fieldClassName = 'flex h-11 w-full rounded-2xl border border-white/12 bg-white/6 px-4 py-2 text-sm text-white placeholder:text-white/35';
 
 export default function Patient() {
   const [name, setName] = useState('');
@@ -43,39 +43,35 @@ export default function Patient() {
   const [bloodGroup, setBloodGroup] = useState('Unknown');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [area, setArea] = useState('Gulshan');
-  
   const [estimating, setEstimating] = useState(false);
   const [estimation, setEstimation] = useState<any>(null);
-  
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
   const [ambulances, setAmbulances] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<any[]>([]);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
 
   const areas = [
-    { name: 'Gulshan', lat: 23.7940, lng: 90.4125 },
+    { name: 'Gulshan', lat: 23.794, lng: 90.4125 },
     { name: 'Banani', lat: 23.7936, lng: 90.4066 },
     { name: 'Dhanmondi', lat: 23.7461, lng: 90.3742 },
     { name: 'Uttara', lat: 23.8759, lng: 90.3976 },
-    { name: 'Mirpur', lat: 23.8223, lng: 90.3654 }
+    { name: 'Mirpur', lat: 23.8223, lng: 90.3654 },
   ];
 
   useEffect(() => {
-    // Load profile
     const savedProfile = localStorage.getItem('patientProfile');
     if (savedProfile) {
-      const p = JSON.parse(savedProfile);
-      setName(p.name || '');
-      setPhone(p.phone || '');
-      setDob(p.dob || '');
-      setBloodGroup(p.bloodGroup || 'Unknown');
-      setEmergencyContact(p.emergencyContact || '');
+      const profile = JSON.parse(savedProfile);
+      setName(profile.name || '');
+      setPhone(profile.phone || '');
+      setDob(profile.dob || '');
+      setBloodGroup(profile.bloodGroup || 'Unknown');
+      setEmergencyContact(profile.emergencyContact || '');
     }
-    
+
     fetchAmbulances();
     fetchHospitals();
     const interval = setInterval(fetchAmbulances, 3000);
@@ -85,66 +81,60 @@ export default function Patient() {
   const fetchAmbulances = async () => {
     try {
       const res = await fetch('/api/ambulances');
-      if (res.ok) {
-        setAmbulances(await res.json());
-      }
-    } catch (e) {}
+      if (res.ok) setAmbulances(await res.json());
+    } catch {}
   };
 
   const fetchHospitals = async () => {
     try {
       const res = await fetch('/api/hospitals');
-      if (res.ok) {
-        setHospitals(await res.json());
-      }
-    } catch (e) {}
+      if (res.ok) setHospitals(await res.json());
+    } catch {}
   };
 
   const handleLocateMe = () => {
     setLocating(true);
-    if ("geolocation" in navigator) {
+    if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           });
           setLocating(false);
           setArea('Custom Location');
         },
-        (error) => {
-          console.error("Error getting location", error);
-          setError("Could not get your location. Please select an area manually.");
+        () => {
+          setError('Could not get your location. Please select an area manually.');
           setLocating(false);
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
     } else {
-      setError("Geolocation is not supported by your browser.");
+      setError('Geolocation is not supported by your browser.');
       setLocating(false);
     }
   };
 
-  const handleSOSClick = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSOSClick = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!name || !phone) {
       setError('Please fill in all required fields');
       return;
     }
 
-    // Save profile
     localStorage.setItem('patientProfile', JSON.stringify({ name, phone, dob, bloodGroup, emergencyContact }));
-
     setEstimating(true);
     setError(null);
 
     try {
-      let lat, lng;
+      let lat;
+      let lng;
       if (userLocation) {
         lat = userLocation.lat;
         lng = userLocation.lng;
       } else {
-        const selectedArea = areas.find(a => a.name === area) || areas[0];
+        const selectedArea = areas.find((candidate) => candidate.name === area) || areas[0];
         lat = selectedArea.lat + (Math.random() - 0.5) * 0.01;
         lng = selectedArea.lng + (Math.random() - 0.5) * 0.01;
       }
@@ -152,14 +142,12 @@ export default function Patient() {
       const res = await fetch('/api/estimate-trip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat, lng })
+        body: JSON.stringify({ lat, lng }),
       });
 
       if (!res.ok) throw new Error('Failed to get estimation');
-      
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      
       setEstimation({ ...data, lat, lng });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
@@ -174,21 +162,20 @@ export default function Patient() {
       const res = await fetch('/api/request-ambulance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name, 
-          phone, 
-          lat: estimation.lat, 
+        body: JSON.stringify({
+          name,
+          phone,
+          lat: estimation.lat,
           lng: estimation.lng,
           emergencyType,
           dob,
           bloodGroup,
           emergencyContact,
-          estimatedFare: estimation.estimatedFareBDT
-        })
+          estimatedFare: estimation.estimatedFareBDT,
+        }),
       });
 
       if (!res.ok) throw new Error('Failed to submit request');
-      
       setSuccess(true);
       setEstimation(null);
     } catch (err) {
@@ -198,197 +185,204 @@ export default function Patient() {
     }
   };
 
-  const selectedArea = areas.find(a => a.name === area) || areas[0];
+  const selectedArea = areas.find((candidate) => candidate.name === area) || areas[0];
+  const currentCenter: [number, number] = [userLocation?.lat || selectedArea.lat, userLocation?.lng || selectedArea.lng];
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-4 mb-8">
-          <Link to="/">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-500/10 rounded-lg">
-              <User className="w-6 h-6 text-green-500" />
+    <div className="portal-shell">
+      <div className="portal-container max-w-6xl">
+        <div className="portal-header">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Link to="/">
+                <Button variant="ghost" size="icon" className="rounded-full border border-white/12 bg-white/6 text-white hover:bg-white/10">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl border border-emerald-300/15 bg-emerald-400/10 p-3">
+                  <User className="w-6 h-6 text-emerald-200" />
+                </div>
+                <div>
+                  <span className="section-kicker">Patient SOS</span>
+                  <h1 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">Fast emergency access</h1>
+                </div>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Patient Portal</h1>
+            <p className="max-w-2xl text-sm leading-6 text-white/68 md:text-base">
+              Request urgent transport with location detection, estimated arrival, and live ambulance context before dispatch confirmation.
+            </p>
+          </div>
+
+          <div className="grid w-full gap-3 md:max-w-md md:grid-cols-2">
+            <div className="metric-tile">
+              <p className="text-xs uppercase tracking-[0.22em] text-white/45">Ambulances visible</p>
+              <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">{ambulances.length}</p>
+              <p className="mt-1 text-sm text-white/58">Units shown near your selected area</p>
+            </div>
+            <div className="metric-tile">
+              <p className="text-xs uppercase tracking-[0.22em] text-white/45">Selected location</p>
+              <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-white">{userLocation ? 'GPS' : area}</p>
+              <p className="mt-1 text-sm text-white/58">{userLocation ? 'Using live device location' : 'Dhaka pickup area preset'}</p>
+            </div>
           </div>
         </div>
 
         {success ? (
-          <Card className="border-green-500/50 bg-green-500/5">
-            <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
-              <CheckCircle2 className="w-16 h-16 text-green-500" />
-              <h2 className="text-2xl font-bold text-green-700 dark:text-green-400">Emergency Request Sent</h2>
-              <p className="text-muted-foreground">
-                An ambulance has been dispatched to your location. Please stay calm and keep your phone nearby.
+          <Card className="premium-card border-emerald-400/20 bg-emerald-500/6">
+            <CardContent className="flex flex-col items-center space-y-4 pt-8 text-center">
+              <CheckCircle2 className="h-16 w-16 text-emerald-300" />
+              <h2 className="text-2xl font-bold text-white">Emergency request sent</h2>
+              <p className="max-w-xl text-white/68">
+                An ambulance has been dispatched to your location. Stay calm, keep your phone nearby, and prepare your emergency information.
               </p>
-              
-              <div className="w-full h-[300px] rounded-lg overflow-hidden border mt-4">
-                <MapContainer center={[estimation?.lat || (userLocation?.lat || selectedArea.lat), estimation?.lng || (userLocation?.lng || selectedArea.lng)]} zoom={13} style={{ height: '100%', width: '100%' }}>
+
+              <div className="map-frame mt-4 h-[320px] w-full">
+                <MapContainer center={[estimation?.lat || currentCenter[0], estimation?.lng || currentCenter[1]]} zoom={13} style={{ height: '100%', width: '100%' }}>
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  <MapUpdater center={[estimation?.lat || (userLocation?.lat || selectedArea.lat), estimation?.lng || (userLocation?.lng || selectedArea.lng)]} />
-                  <Marker position={[estimation?.lat || (userLocation?.lat || selectedArea.lat), estimation?.lng || (userLocation?.lng || selectedArea.lng)]}>
+                  <MapUpdater center={[estimation?.lat || currentCenter[0], estimation?.lng || currentCenter[1]]} />
+                  <Marker position={[estimation?.lat || currentCenter[0], estimation?.lng || currentCenter[1]]}>
                     <Popup>Your Location</Popup>
                   </Marker>
-                  {ambulances.map(amb => (
-                    <Marker key={amb.id} position={[amb.location.lat, amb.location.lng]} icon={ambulanceIcon}>
-                      <Popup>{amb.plateNumber} ({amb.status})</Popup>
+                  {ambulances.map((ambulance) => (
+                    <Marker key={ambulance.id} position={[ambulance.location.lat, ambulance.location.lng]} icon={ambulanceIcon}>
+                      <Popup>{ambulance.plateNumber} ({ambulance.status})</Popup>
                     </Marker>
                   ))}
-                  {hospitals.map(hosp => (
-                    <Marker key={hosp.id} position={[hosp.lat, hosp.lng]} icon={hospitalIcon}>
-                      <Popup>{hosp.name}</Popup>
+                  {hospitals.map((hospital) => (
+                    <Marker key={hospital.id} position={[hospital.lat, hospital.lng]} icon={hospitalIcon}>
+                      <Popup>{hospital.name}</Popup>
                     </Marker>
                   ))}
                 </MapContainer>
               </div>
 
-              <Button onClick={() => setSuccess(false)} variant="outline" className="mt-4">
+              <Button onClick={() => setSuccess(false)} variant="outline" className="mt-2 rounded-full border-white/12 bg-white/6 text-white hover:bg-white/10">
                 Make Another Request
               </Button>
             </CardContent>
           </Card>
         ) : estimation ? (
-          <Card className="border-amber-500/50">
+          <Card className="premium-card border-amber-400/20">
             <CardHeader>
-              <CardTitle className="text-amber-600 flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-amber-200">
                 <AlertTriangle className="w-5 h-5" />
                 Confirm Ambulance
               </CardTitle>
-              <CardDescription>Review the estimated time and fare before confirming.</CardDescription>
+              <CardDescription>Review the estimated time and fare before confirming dispatch.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-4 bg-accent rounded-lg">
-                  <Clock className="w-8 h-8 text-primary" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Estimated Arrival</div>
-                    <div className="text-2xl font-bold">{estimation.estimatedTimeMins} mins</div>
-                  </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/6 p-4">
+                  <Clock className="mb-3 h-8 w-8 text-primary" />
+                  <div className="text-sm text-white/58">Estimated Arrival</div>
+                  <div className="text-2xl font-bold text-white">{estimation.estimatedTimeMins} mins</div>
                 </div>
-                <div className="flex items-center gap-3 p-4 bg-accent rounded-lg">
-                  <CreditCard className="w-8 h-8 text-primary" />
-                  <div>
-                    <div className="text-sm text-muted-foreground">Estimated Fare</div>
-                    <div className="text-2xl font-bold">৳{estimation.estimatedFareBDT}</div>
-                  </div>
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/6 p-4">
+                  <CreditCard className="mb-3 h-8 w-8 text-primary" />
+                  <div className="text-sm text-white/58">Estimated Fare</div>
+                  <div className="text-2xl font-bold text-white">৳{estimation.estimatedFareBDT}</div>
                 </div>
               </div>
 
-              <div className="w-full h-[250px] rounded-lg overflow-hidden border">
+              <div className="map-frame h-[280px] w-full">
                 <MapContainer center={[estimation.lat, estimation.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   <MapUpdater center={[estimation.lat, estimation.lng]} />
                   <Marker position={[estimation.lat, estimation.lng]}>
                     <Popup>Pickup Location</Popup>
                   </Marker>
-                  {ambulances.map(amb => (
-                    <Marker key={amb.id} position={[amb.location.lat, amb.location.lng]} icon={ambulanceIcon}>
-                      <Popup>{amb.plateNumber}</Popup>
+                  {ambulances.map((ambulance) => (
+                    <Marker key={ambulance.id} position={[ambulance.location.lat, ambulance.location.lng]} icon={ambulanceIcon}>
+                      <Popup>{ambulance.plateNumber}</Popup>
                     </Marker>
                   ))}
-                  {hospitals.map(hosp => (
-                    <Marker key={hosp.id} position={[hosp.lat, hosp.lng]} icon={hospitalIcon}>
-                      <Popup>{hosp.name}</Popup>
+                  {hospitals.map((hospital) => (
+                    <Marker key={hospital.id} position={[hospital.lat, hospital.lng]} icon={hospitalIcon}>
+                      <Popup>{hospital.name}</Popup>
                     </Marker>
                   ))}
                 </MapContainer>
               </div>
 
               <div className="flex gap-4">
-                <Button variant="outline" className="flex-1" onClick={() => setEstimation(null)} disabled={submitting}>
+                <Button variant="outline" className="flex-1 rounded-full border-white/12 bg-white/6 text-white hover:bg-white/10" onClick={() => setEstimation(null)} disabled={submitting}>
                   Cancel
                 </Button>
-                <Button className="flex-1 bg-destructive hover:bg-destructive/90" onClick={confirmAmbulance} disabled={submitting}>
-                  {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm & Dispatch'}
+                <Button className="flex-1 rounded-full bg-orange-400 text-slate-950 hover:bg-orange-300" onClick={confirmAmbulance} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Confirm & Dispatch'}
                 </Button>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Card className="premium-card">
               <CardHeader>
-                <CardTitle className="text-destructive flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-emerald-200">
+                  <ShieldPlus className="w-5 h-5" />
                   Request Emergency Assistance
                 </CardTitle>
-                <CardDescription>
-                  If this is a life-threatening emergency, please call 999 immediately.
-                </CardDescription>
+                <CardDescription>If this is a life-threatening emergency, call 999 immediately.</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSOSClick} className="space-y-4">
                   {error && (
-                    <div className="p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                    <div className="rounded-2xl border border-red-400/15 bg-red-500/10 p-3 text-sm text-red-100">
                       {error}
                     </div>
                   )}
-                  
+
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Patient Full Name *</label>
-                      <input 
-                        type="text" 
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      <label className="text-sm font-medium text-white/82">Patient Full Name *</label>
+                      <input
+                        type="text"
+                        className={fieldClassName}
                         placeholder="e.g. Rahim Uddin"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(event) => setName(event.target.value)}
                         disabled={estimating}
                         required
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Phone Number *</label>
-                        <input 
-                          type="tel" 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        <label className="text-sm font-medium text-white/82">Phone Number *</label>
+                        <input
+                          type="tel"
+                          className={fieldClassName}
                           placeholder="017XXXXXXXX"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(event) => setPhone(event.target.value)}
                           disabled={estimating}
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Emergency Contact</label>
-                        <input 
-                          type="tel" 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        <label className="text-sm font-medium text-white/82">Emergency Contact</label>
+                        <input
+                          type="tel"
+                          className={fieldClassName}
                           placeholder="017XXXXXXXX"
                           value={emergencyContact}
-                          onChange={(e) => setEmergencyContact(e.target.value)}
+                          onChange={(event) => setEmergencyContact(event.target.value)}
                           disabled={estimating}
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Date of Birth</label>
-                      <input 
-                        type="date" 
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={dob}
-                        onChange={(e) => setDob(e.target.value)}
-                        disabled={estimating}
-                      />
+                      <label className="text-sm font-medium text-white/82">Date of Birth</label>
+                      <input type="date" className={fieldClassName} value={dob} onChange={(event) => setDob(event.target.value)} disabled={estimating} />
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Blood Group</label>
-                      <select 
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={bloodGroup}
-                        onChange={(e) => setBloodGroup(e.target.value)}
-                        disabled={estimating}
-                      >
+                      <label className="text-sm font-medium text-white/82">Blood Group</label>
+                      <select className={fieldClassName} value={bloodGroup} onChange={(event) => setBloodGroup(event.target.value)} disabled={estimating}>
                         <option value="Unknown">Unknown</option>
                         <option value="A+">A+</option>
                         <option value="A-">A-</option>
@@ -402,13 +396,8 @@ export default function Patient() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Emergency Type</label>
-                      <select 
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={emergencyType}
-                        onChange={(e) => setEmergencyType(e.target.value)}
-                        disabled={estimating}
-                      >
+                      <label className="text-sm font-medium text-white/82">Emergency Type</label>
+                      <select className={fieldClassName} value={emergencyType} onChange={(event) => setEmergencyType(event.target.value)} disabled={estimating}>
                         <option value="Cardiac">Cardiac Arrest / Chest Pain</option>
                         <option value="Trauma">Accident / Trauma</option>
                         <option value="Maternity">Maternity / Labor</option>
@@ -418,84 +407,95 @@ export default function Patient() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
+                  <div className="rounded-[1.5rem] border border-white/10 bg-white/6 p-4">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-medium text-white/82">
+                      <MapPin className="h-4 w-4 text-emerald-200" />
                       Pickup Area (Dhaka)
-                    </label>
+                    </div>
                     <div className="flex gap-2">
-                      <select 
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      <select
+                        className={fieldClassName}
                         value={area}
-                        onChange={(e) => {
-                          setArea(e.target.value);
+                        onChange={(event) => {
+                          setArea(event.target.value);
                           setUserLocation(null);
                         }}
                         disabled={estimating || !!userLocation}
                       >
                         {userLocation && <option value="Custom Location">Using GPS Location</option>}
-                        {areas.map(a => (
-                          <option key={a.name} value={a.name}>{a.name}</option>
+                        {areas.map((entry) => (
+                          <option key={entry.name} value={entry.name}>
+                            {entry.name}
+                          </option>
                         ))}
                       </select>
-                      <Button 
-                        type="button" 
-                        variant={userLocation ? "default" : "outline"}
+                      <Button
+                        type="button"
+                        variant={userLocation ? 'default' : 'outline'}
                         onClick={handleLocateMe}
                         disabled={locating || estimating}
-                        className="shrink-0"
+                        className="shrink-0 rounded-full border-white/12 bg-white/6 text-white hover:bg-white/10"
                       >
-                        {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4 mr-2" />}
-                        {userLocation ? "Located" : "Locate Me"}
+                        {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="mr-2 h-4 w-4" />}
+                        {userLocation ? 'Located' : 'Locate Me'}
                       </Button>
                     </div>
                   </div>
 
-                  <div className="pt-4">
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 text-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                      disabled={estimating}
-                    >
-                      {estimating ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Locating Nearest Ambulance...
-                        </>
-                      ) : (
-                        'SOS - FIND AMBULANCE'
-                      )}
-                    </Button>
+                  <div className="grid gap-3 rounded-[1.5rem] border border-white/10 bg-white/6 p-4 sm:grid-cols-2">
+                    <div>
+                      <HeartPulse className="mb-2 h-4 w-4 text-rose-300" />
+                      <p className="text-sm font-medium text-white">Priority capture</p>
+                      <p className="mt-1 text-sm text-white/58">Share enough information for a faster and safer dispatch decision.</p>
+                    </div>
+                    <div>
+                      <Navigation className="mb-2 h-4 w-4 text-cyan-300" />
+                      <p className="text-sm font-medium text-white">Location-aware routing</p>
+                      <p className="mt-1 text-sm text-white/58">Use GPS or a nearby area preset if precise coordinates are unavailable.</p>
+                    </div>
                   </div>
+
+                  <Button type="submit" className="h-12 w-full rounded-full bg-emerald-400 text-base font-semibold text-slate-950 hover:bg-emerald-300" disabled={estimating}>
+                    {estimating ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Locating Nearest Ambulance...
+                      </>
+                    ) : (
+                      'SOS - Find Ambulance'
+                    )}
+                  </Button>
                 </form>
               </CardContent>
             </Card>
 
-            <Card className="hidden md:block">
+            <Card className="premium-card hidden md:block">
               <CardHeader>
                 <CardTitle>Live Area Map</CardTitle>
-                <CardDescription>Available ambulances in your vicinity</CardDescription>
+                <CardDescription>Available ambulances and hospitals around your selected pickup zone</CardDescription>
               </CardHeader>
-              <CardContent className="p-0 h-[450px]">
-                <MapContainer center={[userLocation?.lat || selectedArea.lat, userLocation?.lng || selectedArea.lng]} zoom={13} style={{ height: '100%', width: '100%', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}>
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  <MapUpdater center={[userLocation?.lat || selectedArea.lat, userLocation?.lng || selectedArea.lng]} />
-                  {userLocation && (
-                    <Marker position={[userLocation.lat, userLocation.lng]}>
-                      <Popup>Your Location</Popup>
-                    </Marker>
-                  )}
-                  {ambulances.map(amb => (
-                    <Marker key={amb.id} position={[amb.location.lat, amb.location.lng]} icon={ambulanceIcon}>
-                      <Popup>{amb.plateNumber} ({amb.status})</Popup>
-                    </Marker>
-                  ))}
-                  {hospitals.map(hosp => (
-                    <Marker key={hosp.id} position={[hosp.lat, hosp.lng]} icon={hospitalIcon}>
-                      <Popup>{hosp.name}</Popup>
-                    </Marker>
-                  ))}
-                </MapContainer>
+              <CardContent className="h-[560px] p-0">
+                <div className="map-frame h-full">
+                  <MapContainer center={currentCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <MapUpdater center={currentCenter} />
+                    {userLocation && (
+                      <Marker position={[userLocation.lat, userLocation.lng]}>
+                        <Popup>Your Location</Popup>
+                      </Marker>
+                    )}
+                    {ambulances.map((ambulance) => (
+                      <Marker key={ambulance.id} position={[ambulance.location.lat, ambulance.location.lng]} icon={ambulanceIcon}>
+                        <Popup>{ambulance.plateNumber} ({ambulance.status})</Popup>
+                      </Marker>
+                    ))}
+                    {hospitals.map((hospital) => (
+                      <Marker key={hospital.id} position={[hospital.lat, hospital.lng]} icon={hospitalIcon}>
+                        <Popup>{hospital.name}</Popup>
+                      </Marker>
+                    ))}
+                  </MapContainer>
+                </div>
               </CardContent>
             </Card>
           </div>

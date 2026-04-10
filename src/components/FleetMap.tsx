@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -19,11 +19,9 @@ import {
   Truck,
   AlertTriangle
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Props {
   ambulances: Ambulance[];
@@ -59,11 +57,11 @@ export default function FleetMap({ ambulances, emergencies }: Props) {
           <p className="text-muted-foreground">Real-time tactical positioning of all units.</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex bg-card border border-border rounded-md p-1">
+          <div className="flex rounded-full border border-white/12 bg-white/6 p-1">
             <button onClick={() => setZoom(z => Math.min(z + 0.2, 2))} className="p-1.5 hover:bg-accent rounded"><ZoomIn className="w-4 h-4" /></button>
             <button onClick={() => setZoom(z => Math.max(z - 0.2, 0.5))} className="p-1.5 hover:bg-accent rounded"><ZoomOut className="w-4 h-4" /></button>
           </div>
-          <button className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-md text-sm hover:bg-accent">
+          <button className="flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-sm hover:bg-white/10">
             <Layers className="w-4 h-4" /> Layers
           </button>
         </div>
@@ -71,7 +69,7 @@ export default function FleetMap({ ambulances, emergencies }: Props) {
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0">
         {/* Map Area */}
-        <Card className="lg:col-span-3 bg-black/40 border-border/50 relative overflow-hidden group">
+        <Card className="premium-card lg:col-span-3 relative overflow-hidden group">
           <CardContent className="p-0 h-full relative">
             {/* Grid Background */}
             <div className="absolute inset-0 opacity-20 pointer-events-none" 
@@ -133,7 +131,7 @@ export default function FleetMap({ ambulances, emergencies }: Props) {
 
             {/* Map Overlay Info */}
             <div className="absolute bottom-4 left-4 flex flex-col gap-2">
-              <div className="bg-card/80 backdrop-blur border border-border p-2 rounded text-[10px] space-y-1">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-[10px] space-y-1 backdrop-blur">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-sm" /> <span>Available Unit</span>
                 </div>
@@ -153,7 +151,7 @@ export default function FleetMap({ ambulances, emergencies }: Props) {
 
         {/* Sidebar Info */}
         <div className="space-y-6">
-          <Card className="bg-card/50 border-border/50">
+          <Card className="premium-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Selection Details</CardTitle>
             </CardHeader>
@@ -192,7 +190,7 @@ export default function FleetMap({ ambulances, emergencies }: Props) {
                           <p className="font-medium mt-1">{selectedAmbulance.batteryLevel}%</p>
                         </div>
                       </div>
-                      <Button className="w-full mt-2" size="sm">
+                      <Button className="w-full mt-2 rounded-full bg-white text-slate-950 hover:bg-slate-100" size="sm">
                         <Navigation className="w-4 h-4 mr-2" /> Dispatch Commands
                       </Button>
                     </>
@@ -222,7 +220,7 @@ export default function FleetMap({ ambulances, emergencies }: Props) {
                           <p className="font-medium">{selectedEmergency.callerName} ({selectedEmergency.callerPhone})</p>
                         </div>
                       </div>
-                      <Button variant="destructive" className="w-full mt-2" size="sm">
+                      <Button variant="destructive" className="w-full mt-2 rounded-full" size="sm">
                         <Crosshair className="w-4 h-4 mr-2" /> Assign Nearest Unit
                       </Button>
                     </>
@@ -237,7 +235,7 @@ export default function FleetMap({ ambulances, emergencies }: Props) {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/50 border-border/50">
+          <Card className="premium-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Active Units</CardTitle>
             </CardHeader>

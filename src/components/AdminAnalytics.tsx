@@ -61,14 +61,14 @@ export default function AdminAnalytics() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Advanced Analytics</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-3xl font-semibold tracking-[-0.05em] text-white">Advanced Analytics</h2>
+        <p className="text-white/62">
           Insights from Materialized Views and System Logs
         </p>
       </div>
 
       <Tabs defaultValue="efficiency" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-4 rounded-[1.4rem] border border-white/10 bg-white/6 p-1">
           <TabsTrigger value="efficiency" className="flex items-center gap-2">
             <Activity className="w-4 h-4" /> Hospital Efficiency
           </TabsTrigger>
@@ -84,7 +84,7 @@ export default function AdminAnalytics() {
         </TabsList>
 
         <TabsContent value="efficiency" className="mt-6">
-          <Card>
+          <Card className="premium-card">
             <CardHeader>
               <CardTitle>Hospital Efficiency (MV_Hospital_Efficiency)</CardTitle>
               <CardDescription>Average turnaround times and case volumes per hospital.</CardDescription>
@@ -117,7 +117,7 @@ export default function AdminAnalytics() {
         </TabsContent>
 
         <TabsContent value="maintenance" className="mt-6">
-          <Card>
+          <Card className="premium-card">
             <CardHeader>
               <CardTitle>Predictive Maintenance (MV_Predictive_Maintenance)</CardTitle>
               <CardDescription>Vehicles requiring service based on time and usage.</CardDescription>
@@ -154,7 +154,7 @@ export default function AdminAnalytics() {
         </TabsContent>
 
         <TabsContent value="ghost" className="mt-6">
-          <Card>
+          <Card className="premium-card">
             <CardHeader>
               <CardTitle>Ghost Trips (V_Ghost_Trips)</CardTitle>
               <CardDescription>Ambulances moving without an active emergency assignment.</CardDescription>
@@ -187,7 +187,7 @@ export default function AdminAnalytics() {
         </TabsContent>
 
         <TabsContent value="equipment" className="mt-6">
-          <Card>
+          <Card className="premium-card">
             <CardHeader>
               <CardTitle>Equipment Inventory</CardTitle>
               <CardDescription>Current medical equipment stock across the fleet.</CardDescription>
